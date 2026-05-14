@@ -12,10 +12,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
         });
     }
-    // if token is valid then this validate function will be called and the return value will be attached to the request object as req.user
+    // if token is valid then 
     async validate(payload: any) {
         return {
-            userId: payload.userId,
+            userId: payload.sub,
             shopId: payload.shopId,
             email: payload.email,
         };

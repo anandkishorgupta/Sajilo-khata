@@ -7,6 +7,7 @@ import {
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../users/entities';
+import { Product } from '../../products/entities';
 
 export type PlanType = 'trial' | 'basic' | 'pro';
 export type ShopStatus = 'trial' | 'active' | 'expired';
@@ -27,6 +28,9 @@ export class Shop {
 
     @OneToOne(() => User, (user) => user.shop)
     owner: User;
+
+    @OneToMany(() => Product, (product) => product.shop)
+    products: Product[];
 
     @Column({ type: 'varchar', default: 'trial' })
     plan: PlanType;

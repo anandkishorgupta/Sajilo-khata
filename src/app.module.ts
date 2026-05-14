@@ -1,20 +1,21 @@
 // app.module.ts
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { ShopsModule } from './shops/shops.module';
-import { UsersModule } from './users/users.module';
-import { ProductsModule } from './products/products.module';
 import { CustomersModule } from './customers/customers.module';
-import { SalesModule } from './sales/sales.module';
-import { PurchasesModule } from './purchases/purchases.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { KhataModule } from './khata/khata.module';
+import { ProductsModule } from './products/products.module';
+import { PurchasesModule } from './purchases/purchases.module';
+import { SalesModule } from './sales/sales.module';
+import { ShopsModule } from './shops/shops.module';
+import { UsersModule } from './users/users.module';
+import { ImagekitModule } from './imagekit/imagekit.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { KhataModule } from './khata/khata.module';
     PurchasesModule,
     ExpensesModule,
     KhataModule,
+    ImagekitModule,
   ],
   controllers: [AppController],
   providers: [AppService],

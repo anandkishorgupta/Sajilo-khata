@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node", "express", "multer"],
     "module": "nodenext",
     "strict": true,
     "strictPropertyInitialization": false,
