@@ -1,8 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-
 import toast from "react-hot-toast"
-
+import { Link } from "react-router-dom"
 import {
   ArrowRight,
   Loader2,
@@ -17,11 +16,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { useRegister } from "@/hooks/use-register";
-import { registerSchema, type RegisterFormData } from "@/schema/register-schema";
-
-
-
+import { useRegister } from "@/hooks/use-register"
+import { registerSchema, type RegisterFormData } from "@/schema/register-schema"
+import { useNavigate } from "react-router-dom"
 const SHOP_TYPES = [
   "Kirana / Grocery",
   "Cosmetic Store",
@@ -32,7 +29,7 @@ const SHOP_TYPES = [
 
 export function RegisterForm() {
   const { mutateAsync, isPending } = useRegister()
-
+  const navigate = useNavigate()
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
 
@@ -61,9 +58,10 @@ export function RegisterForm() {
 
       console.log(data)
 
-      toast.success("Account created successfully")
+      toast.success("Account created successfully, please login to continue")
 
       form.reset()
+      navigate("/login") // redirect here
     } catch (error: any) {
       console.error(error)
 
@@ -130,7 +128,7 @@ export function RegisterForm() {
           <Button
             type="submit"
             disabled={isPending}
-            className="h-12 w-full rounded-2xl"
+            className="h-12 w-full cursor-pointer rounded-2xl"
           >
             {isPending ? (
               <>
@@ -139,11 +137,20 @@ export function RegisterForm() {
               </>
             ) : (
               <>
-                Start free trial
+                Register
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
           </Button>
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-medium text-primary hover:underline"
+            >
+              Login
+            </Link>
+          </p>
         </form>
       </CardContent>
     </Card>

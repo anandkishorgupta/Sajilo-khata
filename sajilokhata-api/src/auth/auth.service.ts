@@ -54,10 +54,10 @@ export class AuthService {
 
         const savedUser = await this.userRepo.save(user);
 
-        const accessToken = this.generateToken(savedUser);
+        // const accessToken = this.generateToken(savedUser);
 
         return {
-            access_token: accessToken,
+            // access_token: accessToken,
             user: {
                 id: savedUser.id,
                 email: savedUser.email,

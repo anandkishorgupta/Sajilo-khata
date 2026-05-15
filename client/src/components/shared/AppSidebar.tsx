@@ -20,6 +20,7 @@ import {
   Settings,
   Store,
 } from "lucide-react"
+import { Link } from "react-router-dom"
 
 const items = [
   {
@@ -59,14 +60,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
+          <div className="bg-gradient-primary shadow-glow flex h-9 w-9 items-center justify-center rounded-xl">
             <Store className="h-5 w-5 text-primary-foreground" />
           </div>
 
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="font-display text-sm font-bold">
-              Sajilo Khata
-            </span>
+            <span className="font-display text-sm font-bold">Sajilo Khata</span>
 
             <span className="text-xs text-muted-foreground">
               Business Suite
@@ -84,10 +83,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={item.title}>
-                    <a href={item.url}>
+                    <Link to={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

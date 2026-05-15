@@ -1,7 +1,6 @@
-import Footer from "@/components/shared/Footer";
-import { Header } from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer"
+import { Header } from "@/components/shared/Header"
 import { Outlet } from "react-router-dom"
-
 
 export default function AppLayout() {
   return (
@@ -10,7 +9,7 @@ export default function AppLayout() {
       <main>
         <Outlet />
       </main>
-      <Footer/>
+      <Footer />
     </div>
   )
 }

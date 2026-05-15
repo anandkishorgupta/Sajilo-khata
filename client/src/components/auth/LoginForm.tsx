@@ -1,18 +1,18 @@
+import { useLogin } from "@/hooks/useLogin"
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
-import { Loader2, Mail, Lock } from "lucide-react"
-import { useLogin } from "@/hooks/useLogin";
-
-
+import toast from "react-hot-toast"
+import { Link, useNavigate } from "react-router-dom"
 export default function LoginForm() {
   const navigate = useNavigate()
-  
+
   const loginMutation = useLogin()
 
   const [form, setForm] = useState({
     email: "",
     password: "",
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -25,9 +25,28 @@ export default function LoginForm() {
         password: form.password,
       },
       {
-        onSuccess: (data) => {
-          localStorage.setItem("token", data.token)
-          navigate("/dashboard")
+        onSuccess: (response) => {
+          console.log(response)
+          if (response?.data?.access_token) {
+            localStorage.setItem("token", response.data.access_token)
+          }
+          if (response?.data?.user) {
+            localStorage.setItem("user", JSON.stringify(response.data.user))
+          }
+
+          toast.success("Login successful")
+
+          setTimeout(() => {
+            navigate("/dashboard")
+          }, 1000)
+        },
+
+        onError: (error: any) => {
+          console.error(error)
+
+          toast.error(
+            error?.response?.data?.message || "Invalid email or password"
+          )
         },
       }
     )
@@ -62,13 +81,26 @@ export default function LoginForm() {
 
         <div className="mt-1 flex items-center gap-2 rounded border px-3">
           <Lock className="h-4 w-4 text-gray-500" />
+
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             className="w-full py-2 outline-none"
             value={form.password}
             onChange={(e) => update("password", e.target.value)}
-            placeholder="••••••••"
+            placeholder="password"
           />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="text-gray-500 hover:text-black"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -80,7 +112,7 @@ export default function LoginForm() {
       {/* BUTTON */}
       <button
         disabled={loginMutation.isPending}
-        className="flex w-full items-center justify-center rounded bg-black py-2 text-white"
+        className="flex w-full cursor-pointer items-center justify-center rounded-2xl bg-primary py-2 text-white"
       >
         {loginMutation.isPending ? (
           <Loader2 className="h-4 w-4 animate-spin" />
