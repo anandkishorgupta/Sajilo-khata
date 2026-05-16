@@ -77,7 +77,6 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>MAIN MENU</SidebarGroupLabel>
-
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

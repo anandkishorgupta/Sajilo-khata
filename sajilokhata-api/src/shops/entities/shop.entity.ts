@@ -6,8 +6,14 @@ import {
     OneToOne,
     PrimaryGeneratedColumn,
 } from 'typeorm';
-import { User } from '../../users/entities';
+import { Customer } from '../../customers/entities';
+import { Expense } from '../../expenses/entities';
+import { KhataTransaction } from '../../khata-transactions/entities';
 import { Product } from '../../products/entities';
+import { Purchase } from '../../purchases/entities';
+import { Sale } from '../../sales/entities';
+import { StockMovement } from '../../stock-movements/entities';
+import { User } from '../../users/entities';
 
 export type PlanType = 'trial' | 'basic' | 'pro';
 export type ShopStatus = 'trial' | 'active' | 'expired';
@@ -43,6 +49,28 @@ export class Shop {
 
     @Column({ type: 'varchar', default: 'trial' })
     status: ShopStatus;
+
+
+    @OneToMany(() => User, (user) => user.shop)
+    users: User[];
+
+    @OneToMany(() => Customer, (customer) => customer.shop)
+    customers: Customer[];
+
+    @OneToMany(() => Sale, (sale) => sale.shop)
+    sales: Sale[];
+
+    @OneToMany(() => Purchase, (purchase) => purchase.shop)
+    purchases: Purchase[];
+
+    @OneToMany(() => Expense, (expense) => expense.shop)
+    expenses: Expense[];
+
+    @OneToMany(() => StockMovement, (stock) => stock.shop)
+    stockMovements: StockMovement[];
+
+    @OneToMany(() => KhataTransaction, (khata) => khata.shop)
+    khataTransactions: KhataTransaction[];
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

@@ -4,10 +4,14 @@ import {
     Entity,
     JoinColumn,
     ManyToOne,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
 import { Shop } from '../../shops/entities';
+import { SaleItem } from '../../sale-items/entities';
+import { PurchaseItem } from '../../purchase-items/entities';
+import { StockMovement } from '../../stock-movements/entities';
 
 @Entity('products')
 export class Product {
@@ -52,6 +56,15 @@ export class Product {
 
     @Column({ default: true })
     isActive: boolean;
+
+    @OneToMany(() => SaleItem, (saleItem) => saleItem.product)
+    saleItems: SaleItem[];
+
+    @OneToMany(() => PurchaseItem, (purchaseItem) => purchaseItem.product)
+    purchaseItems: PurchaseItem[];
+
+    @OneToMany(() => StockMovement, (movement) => movement.product)
+    stockMovements: StockMovement[];
 
     @CreateDateColumn()
     createdAt: Date;

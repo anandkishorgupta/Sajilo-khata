@@ -3,10 +3,13 @@ import {
     CreateDateColumn,
     Entity,
     JoinColumn,
+    OneToMany,
     OneToOne,
     PrimaryGeneratedColumn
 } from 'typeorm';
 import { Shop } from '../../shops/entities';
+import { Sale } from '../../sales/entities';
+import { Expense } from '../../expenses/entities';
 
 @Entity('users')
 export class User {
@@ -19,6 +22,12 @@ export class User {
     })
     @JoinColumn({ name: 'shop_id' })
     shop: Shop;
+
+    @OneToMany(() => Sale, (sale) => sale.user)
+    sales: Sale[];
+
+    @OneToMany(() => Expense, (expense) => expense.user)
+    expenses: Expense[];
 
     @Column()
     name: string;

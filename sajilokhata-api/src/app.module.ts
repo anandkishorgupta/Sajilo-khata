@@ -16,6 +16,10 @@ import { SalesModule } from './sales/sales.module';
 import { ShopsModule } from './shops/shops.module';
 import { UsersModule } from './users/users.module';
 import { ImagekitModule } from './imagekit/imagekit.module';
+import { SaleItemsModule } from './sale-items/sale-items.module';
+import { PurchaseItemsModule } from './purchase-items/purchase-items.module';
+import { KhataTransactionsModule } from './khata-transactions/khata-transactions.module';
+import { StockMovementsModule } from './stock-movements/stock-movements.module';
 
 @Module({
   imports: [
@@ -49,6 +53,10 @@ import { ImagekitModule } from './imagekit/imagekit.module';
     ExpensesModule,
     KhataModule,
     ImagekitModule,
+    SaleItemsModule,
+    PurchaseItemsModule,
+    KhataTransactionsModule,
+    StockMovementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
