@@ -18,9 +18,10 @@ export class User {
 
     // Each user belongs to ONE shop
     @OneToOne(() => Shop, (shop) => shop.owner, {
-        onDelete: 'CASCADE',
+        onDelete: "CASCADE",
+        eager: true,
     })
-    @JoinColumn({ name: 'shop_id' })
+    @JoinColumn({ name: "shop_id" })
     shop: Shop;
 
     @OneToMany(() => Sale, (sale) => sale.user)

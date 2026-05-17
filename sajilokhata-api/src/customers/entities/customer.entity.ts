@@ -26,8 +26,8 @@ export class Customer {
     @Column()
     name: string;
 
-    @Column()
-    phone: string;
+   @Column({ nullable: true })
+phone: string;
 
     @Column({
         nullable: true,

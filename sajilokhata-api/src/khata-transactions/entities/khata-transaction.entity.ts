@@ -11,6 +11,7 @@ import {
 
 import { Shop } from "../../shops/entities/shop.entity";
 import { Customer } from "../../customers/entities/customer.entity";
+import { Sale } from "../../sales/entities";
 
 export type KhataType = "credit" | "payment";
 
@@ -45,6 +46,13 @@ export class KhataTransaction {
     nullable: true,
   })
   note: string;
+
+  @ManyToOne(() => Sale, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "sale_id" })
+  sale: Sale;
 
   @CreateDateColumn({
     name: "created_at",

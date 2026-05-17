@@ -40,8 +40,15 @@ export class StockMovement {
     @Column()
     quantity: number;
 
-    @Column()
-    reference: string;
+    @Column({
+        nullable: true,
+    })
+    referenceType: string; // sale, purchase, manual
+
+    @Column({
+        nullable: true,
+    })
+    referenceId: number;
 
     @CreateDateColumn({
         name: "created_at",

@@ -35,6 +35,17 @@ export class Expense {
     })
     amount: number;
 
+    @Column({
+        nullable: true,
+    })
+    category: string;
+
+    @Column({
+        type: "text",
+        nullable: true,
+    })
+    note: string;
+
     @CreateDateColumn({
         name: "created_at",
     })

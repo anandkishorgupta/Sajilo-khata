@@ -51,9 +51,6 @@ export class Shop {
     status: ShopStatus;
 
 
-    @OneToMany(() => User, (user) => user.shop)
-    users: User[];
-
     @OneToMany(() => Customer, (customer) => customer.shop)
     customers: Customer[];
 

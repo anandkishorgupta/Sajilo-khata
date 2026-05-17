@@ -9,7 +9,6 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
-import { KhataModule } from './khata/khata.module';
 import { ProductsModule } from './products/products.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesModule } from './sales/sales.module';
@@ -51,7 +50,6 @@ import { StockMovementsModule } from './stock-movements/stock-movements.module';
     SalesModule,
     PurchasesModule,
     ExpensesModule,
-    KhataModule,
     ImagekitModule,
     SaleItemsModule,
     PurchaseItemsModule,

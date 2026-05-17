@@ -27,10 +27,11 @@ export class Purchase {
   @JoinColumn({ name: "shop_id" })
   shop: Shop;
 
-  @Column({
-    name: "supplier_name",
-  })
-  supplierName: string;
+@Column({
+  name: "supplier_name",
+  nullable: true,
+})
+supplierName: string;
 
   @Column({
     name: "total_amount",

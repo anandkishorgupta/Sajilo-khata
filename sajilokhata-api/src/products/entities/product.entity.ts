@@ -8,9 +8,9 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { Shop } from '../../shops/entities';
-import { SaleItem } from '../../sale-items/entities';
 import { PurchaseItem } from '../../purchase-items/entities';
+import { SaleItem } from '../../sale-items/entities';
+import { Shop } from '../../shops/entities';
 import { StockMovement } from '../../stock-movements/entities';
 
 @Entity('products')
@@ -27,8 +27,8 @@ export class Product {
     @Column()
     name: string;
 
-    @Column({ unique: true })
-    sku: string; // SKU
+    @Column()
+    sku: string;
 
     @Column({ nullable: true })
     imageUrl: string;

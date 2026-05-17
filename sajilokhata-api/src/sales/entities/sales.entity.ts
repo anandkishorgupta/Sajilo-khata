@@ -9,10 +9,10 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 
-import { Shop } from "../../shops/entities/shop.entity";
-import { User } from "../../users/entities/user.entity";
 import { Customer } from "../../customers/entities";
 import { SaleItem } from "../../sale-items/entities";
+import { Shop } from "../../shops/entities/shop.entity";
+import { User } from "../../users/entities/user.entity";
 
 export type PaymentMethod =
   | "cash"
@@ -65,7 +65,6 @@ export class Sale {
 
   @Column({
     name: "invoice_number",
-    unique: true,
   })
   invoiceNumber: string;
 
