@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -35,6 +36,7 @@ export class Sale {
   // RELATIONS
   // =========================
 
+  @Index()
   @ManyToOne(() => Shop, (shop) => shop.sales, {
     onDelete: "CASCADE",
   })
@@ -43,6 +45,7 @@ export class Sale {
 
   @ManyToOne(() => User, (user) => user.sales, {
     onDelete: "SET NULL",
+    nullable: true,
   })
   @JoinColumn({ name: "user_id" })
   user: User;
@@ -126,15 +129,15 @@ export class Sale {
   // =========================
 
   @Column({
-    name: "payment_method",
-    type: "varchar",
+    type: "enum",
+    enum: ["cash", "qr", "bank", "credit", "mixed"],
     default: "cash",
   })
   paymentMethod: PaymentMethod;
 
   @Column({
-    name: "payment_status",
-    type: "varchar",
+    type: "enum",
+    enum: ["paid", "partial", "due"],
     default: "paid",
   })
   paymentStatus: PaymentStatus;
