@@ -27,7 +27,11 @@ export class ImageKitService {
     };
   }
 
-  async delete(fileId: string) {
-    await this.imagekit.deleteFile(fileId);
-  }
+ 
+
+
+    // DELETE IMAGE
+ async deleteFile(fileId: string): Promise<void> {
+  await this.imagekit.deleteFile(fileId);
+}
 }

@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { ProductsService } from './products.service';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('products')
 export class ProductsController {
@@ -21,7 +21,7 @@ export class ProductsController {
         dto: CreateProductDto,
         @CurrentUser()
         user: any,
-         @UploadedFile() file?: Express.Multer.File,
+        @UploadedFile() file?: Express.Multer.File,
     ) {
         return this.productService.create(
             dto,
@@ -71,10 +71,11 @@ export class ProductsController {
     }
 
     // UPDATE PRODUCT
-    @Put(':id')
+    @Put(":id")
     @UseGuards(JwtAuthGuard)
+    @UseInterceptors(FileInterceptor("image"))
     update(
-        @Param('id', ParseIntPipe)
+        @Param("id", ParseIntPipe)
         id: number,
 
         @Body()
@@ -82,27 +83,31 @@ export class ProductsController {
 
         @CurrentUser()
         user: any,
+
+        @UploadedFile()
+        file?: Express.Multer.File,
     ) {
         return this.productService.update(
             id,
             dto,
             user.shopId,
+            file,
         );
     }
 
     // DELETE PRODUCT
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard)
-    remove(
-        @Param('id', ParseIntPipe)
-        id: number,
+    @Delete(":id")
+  @UseGuards(JwtAuthGuard)
+  remove(
+    @Param("id", ParseIntPipe)
+    id: number,
 
-        @CurrentUser()
-        user: any,
-    ) {
-        return this.productService.remove(
-            id,
-            user.shopId,
-        );
-    }
+    @CurrentUser()
+    user: any,
+  ) {
+    return this.productService.remove(
+      id,
+      user.shopId,
+    );
+  }
 }

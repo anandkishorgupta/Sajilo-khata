@@ -7,7 +7,15 @@ export class UpdateProductDto {
 
     @IsOptional()
     @IsString()
+    sku?: string;
+
+    @IsOptional()
+    @IsString()
     category?: string;
+
+    @IsOptional()
+    @IsString()
+    barcode?: string;
 
     @IsOptional()
     @IsNumber()

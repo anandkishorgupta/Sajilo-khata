@@ -91,14 +91,32 @@ export class ProductsService {
 
     // UPDATE PRODUCT
     async update(
-        id: number, // product id
+        id: number,
         dto: UpdateProductDto,
         shopId: number,
+        file?: Express.Multer.File,
     ) {
         const product = await this.findOne(
             id,
             shopId,
         );
+
+        // upload new image
+        if (file) {
+            // delete old image first
+            if (product.imageFileId) {
+                await this.imageKitService.deleteFile(
+                    product.imageFileId,
+                );
+            }
+
+            // upload new image
+            const imageData =
+                await this.imageKitService.upload(file);
+
+            product.imageUrl = imageData.url;
+            product.imageFileId = imageData.fileId;
+        }
 
         Object.assign(product, dto);
 
@@ -107,7 +125,7 @@ export class ProductsService {
 
     // DELETE PRODUCT
     async remove(
-        id: number, // product id
+        id: number,
         shopId: number,
     ) {
         const product = await this.findOne(
@@ -115,15 +133,27 @@ export class ProductsService {
             shopId,
         );
 
+        // delete image from imagekit
+        if (product.imageFileId) {
+            await this.imageKitService.deleteFile(
+                product.imageFileId,
+            );
+        }
+
         return this.productRepo.remove(product);
     }
 
     // LOW STOCK PRODUCTS
     async lowStock(shopId: number) {
         return this.productRepo
-            .createQueryBuilder('product')
-            .where('product.shop = :shopId', { shopId })
-            .andWhere('product.stock < product.lowStockLimit')
+            .createQueryBuilder("product")
+            .where(
+                "product.shop_id = :shopId",
+                { shopId },
+            )
+            .andWhere(
+                "product.stock <= product.lowStockLimit",
+            )
             .getMany();
     }
 }
