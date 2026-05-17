@@ -9,16 +9,14 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CustomersModule } from './customers/customers.module';
 import { ExpensesModule } from './expenses/expenses.module';
+import { ImagekitModule } from './imagekit/imagekit.module';
+import { KhataTransactionsModule } from './khata-transactions/khata-transactions.module';
 import { ProductsModule } from './products/products.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesModule } from './sales/sales.module';
 import { ShopsModule } from './shops/shops.module';
-import { UsersModule } from './users/users.module';
-import { ImagekitModule } from './imagekit/imagekit.module';
-import { SaleItemsModule } from './sale-items/sale-items.module';
-import { PurchaseItemsModule } from './purchase-items/purchase-items.module';
-import { KhataTransactionsModule } from './khata-transactions/khata-transactions.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -51,8 +49,6 @@ import { StockMovementsModule } from './stock-movements/stock-movements.module';
     PurchasesModule,
     ExpensesModule,
     ImagekitModule,
-    SaleItemsModule,
-    PurchaseItemsModule,
     KhataTransactionsModule,
     StockMovementsModule,
   ],

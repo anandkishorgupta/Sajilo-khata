@@ -12,7 +12,7 @@ import {
 } from "typeorm";
 
 import { Product } from "../../products/entities/product.entity";
-import { Purchase } from "../../purchases/entities";
+import { Purchase } from ".";
 
 @Entity("purchase_items")
 export class PurchaseItem {
@@ -39,4 +39,19 @@ export class PurchaseItem {
     scale: 2,
   })
   costPrice: number;
+
+  @Column({
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+  })
+  unitPrice: number;
+
+
+  @Column({
+    type: "decimal",
+    precision: 12,
+    scale: 2,
+  })
+  subtotal: number;
 }

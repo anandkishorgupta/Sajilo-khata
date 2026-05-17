@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 
 import { Product } from "../../products/entities/product.entity";
-import { Sale } from "../../sales/entities";
+import { Sale } from ".";
 
 @Entity("sale_items")
 export class SaleItem {

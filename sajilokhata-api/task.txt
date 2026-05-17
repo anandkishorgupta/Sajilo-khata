@@ -1,4 +1,17 @@
 auth module ==> done
 product module==>done
-customer 
-sales
+customer ==> done
+sales==> done
+Products → Sales → PURCHASE → Stock System → Khata → Reports
+DONE:
+✔ Sales
+✔ Purchases
+
+NEXT:
+👉 Stock Movement (reporting only)
+
+AFTER THAT:
+👉 Dashboard / Reports
+
+FINAL LEVEL:
+👉 Khata + Analytics + PDF invoices

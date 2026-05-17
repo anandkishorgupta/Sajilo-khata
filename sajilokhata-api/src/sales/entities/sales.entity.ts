@@ -11,9 +11,9 @@ import {
 } from "typeorm";
 
 import { Customer } from "../../customers/entities";
-import { SaleItem } from "../../sale-items/entities";
 import { Shop } from "../../shops/entities/shop.entity";
 import { User } from "../../users/entities/user.entity";
+import { SaleItem } from "./sale-items.entity";
 
 export type PaymentMethod =
   | "cash"

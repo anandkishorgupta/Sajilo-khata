@@ -11,12 +11,11 @@ import { Transactional } from "typeorm-transactional";
 import { Customer } from "../customers/entities";
 import { KhataTransaction } from "../khata-transactions/entities";
 import { Product } from "../products/entities";
-import { SaleItem } from "../sale-items/entities";
 import { Shop } from "../shops/entities";
 import { StockMovement } from "../stock-movements/entities";
 import { User } from "../users/entities";
 import { CreateSaleDto } from "./dto";
-import { Sale } from "./entities";
+import { Sale, SaleItem } from "./entities";
 
 @Injectable()
 export class SalesService {

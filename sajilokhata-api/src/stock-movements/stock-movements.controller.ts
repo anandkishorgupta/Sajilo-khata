@@ -1,4 +1,23 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
-@Controller('stock-movements')
-export class StockMovementsController {}
+import { StockMovementsService } from "./stock-movements.service";
+import { GetStockMovementsDto } from "./dto";
+
+@Controller("stock-movements")
+@UseGuards(JwtAuthGuard)
+export class StockMovementsController {
+  constructor(private readonly service: StockMovementsService) {}
+
+  // =========================
+  // GET REPORT ONLY
+  // =========================
+  @Get()
+  findAll(
+    @CurrentUser() user: any,
+    @Query() query: GetStockMovementsDto,
+  ) {
+    return this.service.findAll(user.shopId, query);
+  }
+}
