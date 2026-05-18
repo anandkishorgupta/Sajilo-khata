@@ -15,3 +15,10 @@ AFTER THAT:
 
 FINAL LEVEL:
 👉 Khata + Analytics + PDF invoices
+
+🎯 Recommended order (BEST PRACTICE)
+1. Khata (Credit system) ← NEXT
+2. Dashboard analytics
+3. Payments / settlement
+4. Expense tracking
+5. Returns system

@@ -8,10 +8,10 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { PurchaseItem } from '../../purchase-items/entities';
-import { SaleItem } from '../../sale-items/entities';
 import { Shop } from '../../shops/entities';
 import { StockMovement } from '../../stock-movements/entities';
+import { SaleItem } from '../../sales/entities';
+import { PurchaseItem } from '../../purchases/entities';
 
 @Entity('products')
 export class Product {
