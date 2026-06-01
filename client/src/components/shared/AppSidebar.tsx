@@ -29,9 +29,9 @@ const items = [
     url: "/dashboard",
   },
   {
-    title: "Products",
+    title: "Inventory",
     icon: Package,
-    url: "/products",
+    url: "/dashboard/inventory",
   },
   {
     title: "Billing",

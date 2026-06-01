@@ -21,7 +21,10 @@ export class Expense {
     @JoinColumn({ name: "shop_id" })
     shop: Shop;
 
-    @ManyToOne(() => User, (user) => user.expenses)
+    @ManyToOne(() => User, (user) => user.expenses, {
+        nullable: true,
+        onDelete: "SET NULL",
+    })
     @JoinColumn({ name: "user_id" })
     user: User;
 

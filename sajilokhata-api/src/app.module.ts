@@ -17,6 +17,8 @@ import { SalesModule } from './sales/sales.module';
 import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { UsersModule } from './users/users.module';
     ImagekitModule,
     KhataTransactionsModule,
     StockMovementsModule,
+    DashboardModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

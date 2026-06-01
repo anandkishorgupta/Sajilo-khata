@@ -1,11 +1,6 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  ParseIntPipe,
-  Post,
   UseGuards,
 } from "@nestjs/common";
 
@@ -13,78 +8,76 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
-import { ExpensesService } from "./expenses.service";
+import { DashboardService } from "./dashboard.service";
 
-import { CreateExpenseDto } from "./dto";
-
-@Controller("expenses")
+@Controller("dashboard")
 @UseGuards(JwtAuthGuard)
-export class ExpensesController {
+export class DashboardController {
   constructor(
-    private readonly expensesService: ExpensesService,
+    private readonly dashboardService: DashboardService,
   ) {}
 
   // =====================================
-  // CREATE
+  // MAIN STATS
   // =====================================
-  @Post()
-  create(
-    @Body()
-    dto: CreateExpenseDto,
-
+  @Get("stats")
+  stats(
     @CurrentUser()
     user: any,
   ) {
-    return this.expensesService.create(
-      dto,
-      user.shopId,
-      user.id,
-    );
-  }
-
-  // =====================================
-  // GET ALL
-  // =====================================
-  @Get()
-  findAll(
-    @CurrentUser()
-    user: any,
-  ) {
-    return this.expensesService.findAll(
+    return this.dashboardService.getStats(
       user.shopId,
     );
   }
 
   // =====================================
-  // GET ONE
+  // SALES CHART
   // =====================================
-  @Get(":id")
-  findOne(
-    @Param("id", ParseIntPipe)
-    id: number,
-
+  @Get("sales-chart")
+  salesChart(
     @CurrentUser()
     user: any,
   ) {
-    return this.expensesService.findOne(
-      id,
+    return this.dashboardService.salesChart(
       user.shopId,
     );
   }
 
   // =====================================
-  // DELETE
+  // TOP PRODUCTS
   // =====================================
-  @Delete(":id")
-  remove(
-    @Param("id", ParseIntPipe)
-    id: number,
-
+  @Get("top-products")
+  topProducts(
     @CurrentUser()
     user: any,
   ) {
-    return this.expensesService.remove(
-      id,
+    return this.dashboardService.topProducts(
+      user.shopId,
+    );
+  }
+
+  // =====================================
+  // LOW STOCK
+  // =====================================
+  @Get("low-stock")
+  lowStock(
+    @CurrentUser()
+    user: any,
+  ) {
+    return this.dashboardService.lowStock(
+      user.shopId,
+    );
+  }
+
+  // =====================================
+  // DUE ANALYTICS
+  // =====================================
+  @Get("due-analytics")
+  dueAnalytics(
+    @CurrentUser()
+    user: any,
+  ) {
+    return this.dashboardService.dueAnalytics(
       user.shopId,
     );
   }

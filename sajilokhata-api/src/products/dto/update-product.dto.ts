@@ -1,5 +1,5 @@
 import { IsNumber, IsOptional, IsString } from 'class-validator';
-
+import { Type } from "class-transformer";
 export class UpdateProductDto {
     @IsOptional()
     @IsString()
@@ -18,18 +18,22 @@ export class UpdateProductDto {
     barcode?: string;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     purchasePrice?: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     sellingPrice?: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     stock?: number;
 
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     lowStockLimit?: number;
 }

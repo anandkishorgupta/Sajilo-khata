@@ -22,3 +22,11 @@ FINAL LEVEL:
 3. Payments / settlement
 4. Expense tracking
 5. Returns system
+
+
+LATER
+4. Returns
+5. Analytics improvements
+6. Notifications
+
+i decided to do this in next version of my project

@@ -42,6 +42,13 @@ export class ProductsController {
         );
     }
 
+    @Get("stats")
+    @UseGuards(JwtAuthGuard)
+    getStats(@CurrentUser() user: any) {
+        return this.productService.getStats(user.shopId)
+    }
+
+
     // LOW STOCK PRODUCTS
     @Get('low-stock')
     @UseGuards(JwtAuthGuard)
@@ -97,17 +104,18 @@ export class ProductsController {
 
     // DELETE PRODUCT
     @Delete(":id")
-  @UseGuards(JwtAuthGuard)
-  remove(
-    @Param("id", ParseIntPipe)
-    id: number,
+    @UseGuards(JwtAuthGuard)
+    remove(
+        @Param("id", ParseIntPipe)
+        id: number,
 
-    @CurrentUser()
-    user: any,
-  ) {
-    return this.productService.remove(
-      id,
-      user.shopId,
-    );
-  }
+        @CurrentUser()
+        user: any,
+    ) {
+        return this.productService.remove(
+            id,
+            user.shopId,
+        );
+    }
 }
+
