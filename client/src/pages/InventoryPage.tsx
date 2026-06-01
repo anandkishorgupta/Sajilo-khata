@@ -4,12 +4,8 @@ import AddProductSheet from "@/components/inventory/ProductSheet"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
+import { Pencil, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDebounce } from "@/hooks/useDebounce"
@@ -17,6 +13,14 @@ import { useInventoryStats, useProducts } from "@/query/useInventory"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, MoreHorizontal, Plus, Search } from "lucide-react"
 import { useState } from "react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 export default function InventoryPage() {
   const queryClient = useQueryClient()
@@ -149,7 +153,7 @@ export default function InventoryPage() {
 
           {/* Table */}
           <div className="-mx-5 mt-4 overflow-x-auto">
-            <table className="w-full min-w-[820px] text-sm">
+            {/* <table className="w-full min-w-[820px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-xs tracking-wider text-muted-foreground uppercase">
                   <th className="px-5 py-3 font-medium">Product</th>
@@ -158,7 +162,7 @@ export default function InventoryPage() {
                   <th className="px-3 py-3 text-right font-medium">Buy</th>
                   <th className="px-3 py-3 text-right font-medium">Sell</th>
                   <th className="px-3 py-3 text-right font-medium">Stock</th>
-                  <th className="px-5 py-3" />
+                  <th className="px-5 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -242,41 +246,169 @@ export default function InventoryPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedProduct(p)
-                                  setEditOpen(true)
-                                }}
-                              >
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-500"
-                                onClick={() => handleDelete(p.id)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="cursor-pointer h-8 w-8"
+                              onClick={() => {
+                                setSelectedProduct(p)
+                                setEditOpen(true)
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="cursor-pointer h-8 w-8 text-red-500 hover:text-red-600"
+                              onClick={() => handleDelete(p.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     )
                   })
                 )}
               </tbody>
-            </table>
+            </table> */}
+
+            <div className="mt-4 overflow-x-auto">
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Product</TableHead>
+        <TableHead>SKU</TableHead>
+        <TableHead>Category</TableHead>
+        <TableHead className="text-right">Buy</TableHead>
+        <TableHead className="text-right">Sell</TableHead>
+        <TableHead className="text-right">Stock</TableHead>
+        <TableHead className="text-center">Actions</TableHead>
+      </TableRow>
+    </TableHeader>
+
+    <TableBody>
+      {productsLoading ? (
+        Array.from({ length: 5 }).map((_, i) => (
+          <TableRow key={i}>
+            <TableCell colSpan={7}>
+              <Skeleton className="h-8 w-full" />
+            </TableCell>
+          </TableRow>
+        ))
+      ) : products?.length === 0 ? (
+        <TableRow>
+          <TableCell
+            colSpan={7}
+            className="h-24 text-center text-muted-foreground"
+          >
+            No products found.
+          </TableCell>
+        </TableRow>
+      ) : (
+        products?.map((p) => {
+          const low = p.stock <= p.lowStockLimit
+
+          return (
+            <TableRow key={p.id}>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 overflow-hidden rounded-md bg-muted">
+                    {p.imageUrl ? (
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        📦
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="font-medium">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Margin{" "}
+                      {Math.round(
+                        ((p.sellingPrice - p.purchasePrice) /
+                          p.sellingPrice) *
+                          100
+                      )}
+                      %
+                    </p>
+                  </div>
+                </div>
+              </TableCell>
+
+              <TableCell className="font-mono">
+                {p.sku}
+              </TableCell>
+
+              <TableCell>
+                <Badge variant="outline">{p.category}</Badge>
+              </TableCell>
+
+              <TableCell className="text-right">
+                Rs {p.purchasePrice.toLocaleString()}
+              </TableCell>
+
+              <TableCell className="text-right font-semibold">
+                Rs {p.sellingPrice.toLocaleString()}
+              </TableCell>
+
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  {low && (
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                  )}
+                  <span
+                    className={
+                      low
+                        ? "font-semibold text-destructive"
+                        : ""
+                    }
+                  >
+                    {p.stock}
+                  </span>
+                </div>
+              </TableCell>
+
+              <TableCell>
+                <div className="flex justify-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedProduct(p)
+                      setEditOpen(true)
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500"
+                    onClick={() => handleDelete(p.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          )
+        })
+      )}
+    </TableBody>
+  </Table>
+</div>
           </div>
         </CardContent>
       </Card>
