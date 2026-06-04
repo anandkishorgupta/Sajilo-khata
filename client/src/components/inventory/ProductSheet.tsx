@@ -22,11 +22,12 @@ import { Package } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { useForm } from "react-hook-form"
-
+import toast from "react-hot-toast"
 type Props = {
   open: boolean
   onClose: () => void
   product?: any
+  onSuccess?: () => void
 }
 
 type FormValues = {
@@ -62,7 +63,12 @@ const defaultValues: FormValues = {
   // expiryDate: "",
 }
 
-export default function AddProductSheet({ open, onClose, product }: Props) {
+export default function AddProductSheet({
+  open,
+  onClose,
+  product,
+  onSuccess,
+}: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState("")
   const queryClient = useQueryClient()
@@ -175,19 +181,23 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
 
       if (product) {
         await updateProduct(product.id, payload, imageFile || undefined)
+        toast.success("Product updated successfully!")
       } else {
         await createProduct(payload, imageFile || undefined)
+        toast.success("Product added successfully!")
       }
 
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ["products"] })
       await queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
 
+      onSuccess?.()
       handleClose()
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Something went wrong"
-      setError("root", { message })
+      toast.error(message) // ADD — shows API error
+      setError("root", { message }) // keep inline error too if you want
     }
   }
 

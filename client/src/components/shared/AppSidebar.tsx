@@ -36,22 +36,22 @@ const items = [
   {
     title: "Billing",
     icon: Receipt,
-    url: "/billing",
+    url: "/dashboard/billing",
   },
   {
     title: "Customers",
     icon: Users,
-    url: "/customers",
+    url: "/dashboard/customers",
   },
   {
     title: "Analytics",
     icon: BarChart3,
-    url: "/analytics",
+    url: "/dashboard/analytics",
   },
   {
     title: "Settings",
     icon: Settings,
-    url: "/settings",
+    url: "/dashboard/settings",
   },
 ]
 

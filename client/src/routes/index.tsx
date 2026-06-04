@@ -1,22 +1,25 @@
-import { createBrowserRouter } from "react-router-dom"
+import { createBrowserRouter } from "react-router-dom";
 
-import AppLayout from "@/layout/AppLayout"
-import DashboardLayout from "@/layout/DashboardLayout"
+import AppLayout from "@/layout/AppLayout";
+import DashboardLayout from "@/layout/DashboardLayout";
 
-import LoginPage from "@/pages/auth/Loginpage"
-import RegisterPage from "@/pages/auth/RegisterPage"
-import DashboardPage from "@/pages/dashboard/DashboardPage"
-import HomePage from "@/pages/HomePage"
+import LoginPage from "@/pages/auth/Loginpage";
+import RegisterPage from "@/pages/auth/RegisterPage";
+import DashboardPage from "@/pages/dashboard/DashboardPage";
+import HomePage from "@/pages/HomePage";
 
-import InventoryPage from "@/pages/InventoryPage"
-import ProtectedRoute from "./ProtectedRoute"
-import PublicRoute from "./PublicRoute"
+import InventoryPage from "@/pages/InventoryPage";
+import BillingPage from "@/pages/BillingPage";
+
+import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
 
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
     children: [
       { path: "/", element: <HomePage /> },
+
       {
         path: "/login",
         element: (
@@ -44,7 +47,10 @@ export const router = createBrowserRouter([
     ),
     children: [
       { path: "/dashboard", element: <DashboardPage /> },
-      { path: "/dashboard/inventory", element: <InventoryPage /> }, // ← add this
+      { path: "/dashboard/inventory", element: <InventoryPage /> },
+
+      // ✅ ADD THIS
+      { path: "/dashboard/billing", element: <BillingPage /> },
     ],
   },
-])
+]);

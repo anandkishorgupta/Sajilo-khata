@@ -30,3 +30,6 @@ LATER
 6. Notifications
 
 i decided to do this in next version of my project
+
+TODO later
+++==> filter by category dynamic making remaining , for this from frontrnf i have to add functionality of CRUD categories

@@ -4,16 +4,8 @@ import AddProductSheet from "@/components/inventory/ProductSheet"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-
-import { Pencil, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useDebounce } from "@/hooks/useDebounce"
-import { useInventoryStats, useProducts } from "@/query/useInventory"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { FaSortAlphaDown, FaSortAlphaUp, FaFilter } from "react-icons/fa"
-import { AlertTriangle, MoreHorizontal, Plus, Search } from "lucide-react"
-import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -22,6 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useDebounce } from "@/hooks/useDebounce"
+import { useInventoryStats, useProducts } from "@/query/useInventory"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { AlertTriangle, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { useState } from "react"
+import toast from "react-hot-toast"
+import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa"
 
 import {
   Pagination,
@@ -66,10 +65,11 @@ export default function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
       queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
+      toast.success("Product deleted!")
     },
     onError: (error) => {
-      console.error("Failed to delete product:", error)
-      alert("Failed to delete product. Please try again.")
+      const message = "Failed to delete product"
+      toast.error(message)
     },
   })
 
@@ -83,6 +83,15 @@ export default function InventoryPage() {
     deleteMutation.mutate(id)
   }
 
+  // Add this function inside InventoryPage
+  const resetFilters = () => {
+    setSearch("")
+    setCategory("")
+    setStockFilter("")
+    setSortBy("createdAt")
+    setSortOrder("DESC")
+    setPage(1)
+  }
   return (
     <div className="flex flex-col gap-1 p-6">
       {/* Header */}
@@ -154,31 +163,31 @@ export default function InventoryPage() {
           <div className="flex flex-wrap items-center gap-3">
             Search
             <div className="relative min-w-[240px] flex-1">
-  <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-  <Input
-    className="pl-9"
-    placeholder="Search products, SKU…"
-    value={search}
-    onChange={(e) => {
-      setSearch(e.target.value)
-      setPage(1)
-    }}
-  />
-</div>
-             Category
-             <select
-  className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-  value={category}
-  onChange={(e) => {
-    setCategory(e.target.value)
-    setPage(1)
-  }}
->
-  <option value="">All categories</option>
-  <option value="Drinks">Drinks</option>
-  <option value="Snacks">Snacks</option>
-  {/* add your categories dynamically if you have a /categories endpoint */}
-</select>
+              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Search products, SKU…"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setPage(1)
+                }}
+              />
+            </div>
+            Category
+            <select
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="">All categories</option>
+              <option value="Drinks">Drinks</option>
+              <option value="Snacks">Snacks</option>
+              {/* add your categories dynamically if you have a /categories endpoint */}
+            </select>
             <select
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
               value={stockFilter}
@@ -410,6 +419,13 @@ export default function InventoryPage() {
           setSelectedProduct(null)
         }}
         product={selectedProduct}
+        onSuccess={() => {
+          // ADD THIS
+          if (!selectedProduct) {
+            // only reset on ADD, not edit
+            resetFilters()
+          }
+        }}
       />
     </div>
   )
