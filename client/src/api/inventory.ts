@@ -21,11 +21,20 @@ export type InventoryStats = {
   stockValue: number;
 };
 
+// export const getProducts = (params?: {
+//   search?: string;
+//   category?: string;
+//   stockFilter?: string;
+// }) => api.get<Product[]>("/products", { params });
 export const getProducts = (params?: {
   search?: string;
   category?: string;
   stockFilter?: string;
-}) => api.get<Product[]>("/products", { params });
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+  page?: number;
+  limit?: number;
+}) => api.get("/products", { params });
 
 export const getInventoryStats = () =>
   api.get<InventoryStats>("/products/stats");

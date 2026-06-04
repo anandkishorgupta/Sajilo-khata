@@ -1,44 +1,44 @@
-import { createProduct, updateProduct } from "@/api/inventory";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { createProduct, updateProduct } from "@/api/inventory"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
+} from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { useQueryClient } from "@tanstack/react-query";
-import { Package } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { useForm } from "react-hook-form";
+} from "@/components/ui/sheet"
+import { useQueryClient } from "@tanstack/react-query"
+import { Package } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useDropzone } from "react-dropzone"
+import { useForm } from "react-hook-form"
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
-  product?: any;
-};
+  open: boolean
+  onClose: () => void
+  product?: any
+}
 
 type FormValues = {
-  name: string;
-  sku: string;
-  category: string;
-  purchasePrice: number;
-  sellingPrice: number;
-  stock: number;
-  lowStockLimit: number;
+  name: string
+  sku: string
+  category: string
+  purchasePrice: number
+  sellingPrice: number
+  stock: number
+  lowStockLimit: number
   // expiryDate: string;
-};
+}
 
 const categories = [
   "Grocery",
@@ -49,7 +49,7 @@ const categories = [
   "Hardware",
   "Stationery",
   "Other",
-];
+]
 
 const defaultValues: FormValues = {
   name: "",
@@ -60,21 +60,21 @@ const defaultValues: FormValues = {
   stock: 0,
   lowStockLimit: 0,
   // expiryDate: "",
-};
+}
 
 export default function AddProductSheet({ open, onClose, product }: Props) {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
-  const queryClient = useQueryClient();
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState("")
+  const queryClient = useQueryClient()
 
   // Cleanup preview URL on unmount or when preview changes
   useEffect(() => {
     return () => {
       if (preview && preview.startsWith("blob:")) {
-        URL.revokeObjectURL(preview);
+        URL.revokeObjectURL(preview)
       }
-    };
-  }, [preview]);
+    }
+  }, [preview])
 
   const {
     getRootProps,
@@ -91,27 +91,27 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
     },
     onDrop: (acceptedFiles, rejectedFiles) => {
       if (rejectedFiles.length > 0) {
-        const error = rejectedFiles[0].errors[0];
+        const error = rejectedFiles[0].errors[0]
         if (error.code === "file-too-large") {
-          alert("File is too large. Max size is 5MB.");
+          alert("File is too large. Max size is 5MB.")
         } else {
-          alert("Invalid file type. Please upload an image.");
+          alert("Invalid file type. Please upload an image.")
         }
-        return;
+        return
       }
 
-      const file = acceptedFiles[0];
-      if (!file) return;
+      const file = acceptedFiles[0]
+      if (!file) return
 
       // Clean up old preview
       if (preview && preview.startsWith("blob:")) {
-        URL.revokeObjectURL(preview);
+        URL.revokeObjectURL(preview)
       }
 
-      setImageFile(file);
-      setPreview(URL.createObjectURL(file));
+      setImageFile(file)
+      setPreview(URL.createObjectURL(file))
     },
-  });
+  })
 
   const {
     register,
@@ -121,7 +121,7 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ defaultValues });
+  } = useForm<FormValues>({ defaultValues })
 
   // Reset form when product changes (for edit mode)
   useEffect(() => {
@@ -135,30 +135,30 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
         stock: product.stock,
         lowStockLimit: product.lowStockLimit,
         // expiryDate: product.expiryDate || "",
-      });
-      setPreview(product.imageUrl || "");
-      setImageFile(null);
+      })
+      setPreview(product.imageUrl || "")
+      setImageFile(null)
     } else {
-      reset(defaultValues);
-      setPreview("");
-      setImageFile(null);
+      reset(defaultValues)
+      setPreview("")
+      setImageFile(null)
     }
-  }, [product, reset]);
+  }, [product, reset])
 
   // Live margin preview
-  const purchasePrice = watch("purchasePrice");
-  const sellingPrice = watch("sellingPrice");
+  const purchasePrice = watch("purchasePrice")
+  const sellingPrice = watch("sellingPrice")
   const margin =
     purchasePrice > 0 && sellingPrice > 0
       ? Math.round(((sellingPrice - purchasePrice) / sellingPrice) * 100)
-      : null;
+      : null
 
   const getMarginColor = () => {
-    if (margin === null) return "";
-    if (margin >= 20) return "bg-green-500/10 text-green-500";
-    if (margin >= 10) return "bg-yellow-500/10 text-yellow-500";
-    return "bg-red-500/10 text-red-500";
-  };
+    if (margin === null) return ""
+    if (margin >= 20) return "bg-green-500/10 text-green-500"
+    if (margin >= 10) return "bg-yellow-500/10 text-yellow-500"
+    return "bg-red-500/10 text-red-500"
+  }
 
   async function onSubmit(data: FormValues) {
     try {
@@ -171,43 +171,44 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
         stock: data.stock,
         lowStockLimit: data.lowStockLimit,
         // expiryDate: data.expiryDate || undefined,
-      };
+      }
 
       if (product) {
-        await updateProduct(product.id, payload, imageFile || undefined);
+        await updateProduct(product.id, payload, imageFile || undefined)
       } else {
-        await createProduct(payload, imageFile || undefined);
+        await createProduct(payload, imageFile || undefined)
       }
 
       // Invalidate queries to refresh data
-      await queryClient.invalidateQueries({ queryKey: ["products"] });
-      await queryClient.invalidateQueries({ queryKey: ["inventory-stats"] });
-      
-      handleClose();
+      await queryClient.invalidateQueries({ queryKey: ["products"] })
+      await queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
+
+      handleClose()
     } catch (err: any) {
-      const message = err?.response?.data?.message || err?.message || "Something went wrong";
-      setError("root", { message });
+      const message =
+        err?.response?.data?.message || err?.message || "Something went wrong"
+      setError("root", { message })
     }
   }
 
   function handleClose() {
     // Clean up preview before closing
     if (preview && preview.startsWith("blob:")) {
-      URL.revokeObjectURL(preview);
+      URL.revokeObjectURL(preview)
     }
-    reset(defaultValues);
-    setImageFile(null);
-    setPreview("");
-    onClose();
+    reset(defaultValues)
+    setImageFile(null)
+    setPreview("")
+    onClose()
   }
 
   const removeImage = () => {
     if (preview && preview.startsWith("blob:")) {
-      URL.revokeObjectURL(preview);
+      URL.revokeObjectURL(preview)
     }
-    setImageFile(null);
-    setPreview("");
-  };
+    setImageFile(null)
+    setPreview("")
+  }
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -247,9 +248,12 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
             <Field label="Product Name" error={errors.name?.message} required>
               <Input
                 placeholder="e.g. Wai Wai Chicken Noodles"
-                {...register("name", { 
+                {...register("name", {
                   required: "Product name is required",
-                  minLength: { value: 2, message: "Name must be at least 2 characters" }
+                  minLength: {
+                    value: 2,
+                    message: "Name must be at least 2 characters",
+                  },
                 })}
               />
             </Field>
@@ -262,7 +266,10 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
                   {...register("sku", {
                     required: "SKU is required",
                     setValueAs: (v) => v.toUpperCase(),
-                    minLength: { value: 2, message: "SKU must be at least 2 characters" }
+                    minLength: {
+                      value: 2,
+                      message: "SKU must be at least 2 characters",
+                    },
                   })}
                 />
               </Field>
@@ -287,7 +294,9 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
                 </Select>
                 <input
                   type="hidden"
-                  {...register("category", { required: "Category is required" })}
+                  {...register("category", {
+                    required: "Category is required",
+                  })}
                 />
               </Field>
             </div>
@@ -328,8 +337,8 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
                         variant="outline"
                         size="sm"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          openFilePicker();
+                          e.stopPropagation()
+                          openFilePicker()
                         }}
                       >
                         Change Image
@@ -339,8 +348,8 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
                         variant="destructive"
                         size="sm"
                         onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage();
+                          e.stopPropagation()
+                          removeImage()
                         }}
                       >
                         Remove
@@ -410,7 +419,9 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
 
             {/* Live margin badge */}
             {margin !== null && (
-              <div className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm ${getMarginColor()}`}>
+              <div
+                className={`flex items-center justify-between rounded-lg px-4 py-3 text-sm ${getMarginColor()}`}
+              >
                 <span>Profit margin</span>
                 <span className="font-bold">{margin}%</span>
               </div>
@@ -482,12 +493,16 @@ export default function AddProductSheet({ open, onClose, product }: Props) {
             className="bg-gradient-primary shadow-glow flex-1 cursor-pointer text-primary-foreground"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : product ? "Update Product" : "Add Product"}
+            {isSubmitting
+              ? "Saving..."
+              : product
+                ? "Update Product"
+                : "Add Product"}
           </Button>
         </div>
       </SheetContent>
     </Sheet>
-  );
+  )
 }
 
 // Helper component for form fields
@@ -497,10 +512,10 @@ function Field({
   required,
   children,
 }: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  children: React.ReactNode;
+  label: string
+  error?: string
+  required?: boolean
+  children: React.ReactNode
 }) {
   return (
     <div className="space-y-1.5">
@@ -511,5 +526,5 @@ function Field({
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
-  );
+  )
 }

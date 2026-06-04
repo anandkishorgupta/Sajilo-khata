@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useInventoryStats, useProducts } from "@/query/useInventory"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { FaSortAlphaDown, FaSortAlphaUp, FaFilter } from "react-icons/fa"
 import { AlertTriangle, MoreHorizontal, Plus, Search } from "lucide-react"
 import { useState } from "react"
 import {
@@ -22,11 +23,24 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 export default function InventoryPage() {
   const queryClient = useQueryClient()
+  const [page, setPage] = useState(1)
+  const limit = 10
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("")
   const [stockFilter, setStockFilter] = useState("")
+  const [sortBy, setSortBy] = useState("createdAt")
+  const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC")
+
   const [addOpen, setAddOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -34,11 +48,18 @@ export default function InventoryPage() {
   const debouncedSearch = useDebounce(search, 400)
 
   const { data: stats, isLoading: statsLoading } = useInventoryStats()
-  const { data: products, isLoading: productsLoading } = useProducts({
+  const { data, isLoading: productsLoading } = useProducts({
     search: debouncedSearch,
     category,
     stockFilter,
+    sortBy,
+    sortOrder,
+    page,
+    limit,
   })
+
+  const products = data?.products ?? []
+  const meta = data?.meta
 
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
@@ -131,285 +152,252 @@ export default function InventoryPage() {
         <CardContent className="p-5">
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-3">
+            Search
             <div className="relative min-w-[240px] flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Search products, SKU, barcode…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+  <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+  <Input
+    className="pl-9"
+    placeholder="Search products, SKU…"
+    value={search}
+    onChange={(e) => {
+      setSearch(e.target.value)
+      setPage(1)
+    }}
+  />
+</div>
+             Category
+             <select
+  className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+  value={category}
+  onChange={(e) => {
+    setCategory(e.target.value)
+    setPage(1)
+  }}
+>
+  <option value="">All categories</option>
+  <option value="Drinks">Drinks</option>
+  <option value="Snacks">Snacks</option>
+  {/* add your categories dynamically if you have a /categories endpoint */}
+</select>
             <select
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
               value={stockFilter}
-              onChange={(e) => setStockFilter(e.target.value)}
+              onChange={(e) => {
+                setStockFilter(e.target.value)
+                setPage(1)
+              }}
             >
               <option value="">All stock</option>
               <option value="low">Low stock</option>
               <option value="out">Out of stock</option>
             </select>
+            {/* Sort By */}
+            <select
+              className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="createdAt">Newest</option>
+              <option value="name">Name</option>
+              <option value="stock">Stock</option>
+              <option value="purchasePrice">Purchase Price</option>
+              <option value="sellingPrice">Selling Price</option>
+            </select>
+            {/* Sort Order */}
+            <div className="flex items-center gap-2">
+              {sortOrder === "ASC" ? <FaSortAlphaUp /> : <FaSortAlphaDown />}
+
+              <select
+                className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value as "ASC" | "DESC")
+                  setPage(1)
+                }}
+              >
+                <option value="DESC">Descending</option>
+                <option value="ASC">Ascending</option>
+              </select>
+            </div>
           </div>
 
           {/* Table */}
           <div className="-mx-5 mt-4 overflow-x-auto">
-            {/* <table className="w-full min-w-[820px] text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs tracking-wider text-muted-foreground uppercase">
-                  <th className="px-5 py-3 font-medium">Product</th>
-                  <th className="px-3 py-3 font-medium">SKU</th>
-                  <th className="px-3 py-3 font-medium">Category</th>
-                  <th className="px-3 py-3 text-right font-medium">Buy</th>
-                  <th className="px-3 py-3 text-right font-medium">Sell</th>
-                  <th className="px-3 py-3 text-right font-medium">Stock</th>
-                  <th className="px-5 py-3 text-center font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {productsLoading ? (
-                  Array.from({ length: 6 }).map((_, i) => (
-                    <tr key={i}>
-                      {Array.from({ length: 7 }).map((_, j) => (
-                        <td key={j} className="px-3 py-3">
-                          <Skeleton className="h-4 w-full" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : products?.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-5 py-10 text-center text-sm text-muted-foreground"
-                    >
-                      No products found.
-                    </td>
-                  </tr>
-                ) : (
-                  products?.map((p) => {
-                    const low = p.stock <= p.lowStockLimit
-                    return (
-                      <tr
-                        key={p.id}
-                        className="transition-colors hover:bg-muted/40"
+            <div className="mt-4 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead className="text-right">Buy</TableHead>
+                    <TableHead className="text-right">Sell</TableHead>
+                    <TableHead className="text-right">Stock</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {productsLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell colSpan={7}>
+                          <Skeleton className="h-8 w-full" />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : products.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="h-24 text-center text-muted-foreground"
                       >
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 overflow-hidden rounded-lg bg-primary/10">
-                              {p.imageUrl ? (
-                                <img
-                                  src={p.imageUrl}
-                                  alt={p.name}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  📦
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium">{p.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                Margin{" "}
-                                {Math.round(
-                                  ((p.sellingPrice - p.purchasePrice) /
-                                    p.sellingPrice) *
-                                    100
+                        No products found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((p) => {
+                      const low = p.stock <= p.lowStockLimit
+
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 overflow-hidden rounded-md bg-muted">
+                                {p.imageUrl ? (
+                                  <img
+                                    src={p.imageUrl}
+                                    alt={p.name}
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center">
+                                    📦
+                                  </div>
                                 )}
-                                %
+                              </div>
+
+                              <div>
+                                <p className="font-medium">{p.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Margin{" "}
+                                  {Math.round(
+                                    ((p.sellingPrice - p.purchasePrice) /
+                                      p.sellingPrice) *
+                                      100
+                                  )}
+                                  %
+                                </p>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 font-mono text-xs text-muted-foreground">
-                          {p.sku}
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge variant="outline">{p.category}</Badge>
-                        </td>
-                        <td className="px-3 py-3 text-right tabular-nums">
-                          Rs {p.purchasePrice.toLocaleString()}
-                        </td>
-                        <td className="px-3 py-3 text-right font-semibold tabular-nums">
-                          Rs {p.sellingPrice.toLocaleString()}
-                        </td>
-                        <td className="px-3 py-3 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            {low && (
-                              <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-                            )}
-                            <span
-                              className={`tabular-nums ${low ? "font-semibold text-destructive" : ""}`}
-                            >
-                              {p.stock}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="cursor-pointer h-8 w-8"
-                              onClick={() => {
-                                setSelectedProduct(p)
-                                setEditOpen(true)
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                          </TableCell>
 
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="cursor-pointer h-8 w-8 text-red-500 hover:text-red-600"
-                              onClick={() => handleDelete(p.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table> */}
+                          <TableCell className="font-mono">{p.sku}</TableCell>
 
-            <div className="mt-4 overflow-x-auto">
-  <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Product</TableHead>
-        <TableHead>SKU</TableHead>
-        <TableHead>Category</TableHead>
-        <TableHead className="text-right">Buy</TableHead>
-        <TableHead className="text-right">Sell</TableHead>
-        <TableHead className="text-right">Stock</TableHead>
-        <TableHead className="text-center">Actions</TableHead>
-      </TableRow>
-    </TableHeader>
+                          <TableCell>
+                            <Badge variant="outline">{p.category}</Badge>
+                          </TableCell>
 
-    <TableBody>
-      {productsLoading ? (
-        Array.from({ length: 5 }).map((_, i) => (
-          <TableRow key={i}>
-            <TableCell colSpan={7}>
-              <Skeleton className="h-8 w-full" />
-            </TableCell>
-          </TableRow>
-        ))
-      ) : products?.length === 0 ? (
-        <TableRow>
-          <TableCell
-            colSpan={7}
-            className="h-24 text-center text-muted-foreground"
-          >
-            No products found.
-          </TableCell>
-        </TableRow>
-      ) : (
-        products?.map((p) => {
-          const low = p.stock <= p.lowStockLimit
+                          <TableCell className="text-right">
+                            Rs {p.purchasePrice.toLocaleString()}
+                          </TableCell>
 
-          return (
-            <TableRow key={p.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 overflow-hidden rounded-md bg-muted">
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        📦
-                      </div>
-                    )}
-                  </div>
+                          <TableCell className="text-right font-semibold">
+                            Rs {p.sellingPrice.toLocaleString()}
+                          </TableCell>
 
-                  <div>
-                    <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Margin{" "}
-                      {Math.round(
-                        ((p.sellingPrice - p.purchasePrice) /
-                          p.sellingPrice) *
-                          100
-                      )}
-                      %
-                    </p>
-                  </div>
-                </div>
-              </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {low && (
+                                <AlertTriangle className="h-4 w-4 text-destructive" />
+                              )}
+                              <span
+                                className={
+                                  low ? "font-semibold text-destructive" : ""
+                                }
+                              >
+                                {p.stock}
+                              </span>
+                            </div>
+                          </TableCell>
 
-              <TableCell className="font-mono">
-                {p.sku}
-              </TableCell>
+                          <TableCell>
+                            <div className="flex justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setSelectedProduct(p)
+                                  setEditOpen(true)
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
 
-              <TableCell>
-                <Badge variant="outline">{p.category}</Badge>
-              </TableCell>
-
-              <TableCell className="text-right">
-                Rs {p.purchasePrice.toLocaleString()}
-              </TableCell>
-
-              <TableCell className="text-right font-semibold">
-                Rs {p.sellingPrice.toLocaleString()}
-              </TableCell>
-
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-1">
-                  {low && (
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-500"
+                                onClick={() => handleDelete(p.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
-                  <span
-                    className={
-                      low
-                        ? "font-semibold text-destructive"
-                        : ""
-                    }
-                  >
-                    {p.stock}
-                  </span>
-                </div>
-              </TableCell>
-
-              <TableCell>
-                <div className="flex justify-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setSelectedProduct(p)
-                      setEditOpen(true)
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-red-500"
-                    onClick={() => handleDelete(p.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          )
-        })
-      )}
-    </TableBody>
-  </Table>
-</div>
+                </TableBody>
+              </Table>
+            </div>
           </div>
+          {meta && meta.totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => page > 1 && setPage(page - 1)}
+                      className={
+                        page === 1
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: meta.totalPages }, (_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink
+                        isActive={page === i + 1}
+                        onClick={() => setPage(i + 1)}
+                        className="cursor-pointer"
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        page < meta.totalPages && setPage(page + 1)
+                      }
+                      className={
+                        page === meta.totalPages
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </CardContent>
       </Card>
 

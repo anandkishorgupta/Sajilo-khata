@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,18 +30,34 @@ export class ProductsController {
         );
     }
 
-    // GET ALL PRODUCTS
+    // GET ALL PRODUCTS with pagination, search, category filter, stock filter, sorting
     @Get()
     @UseGuards(JwtAuthGuard)
     findAll(
-        @CurrentUser()
-        user: any,
+        @CurrentUser() user: any,
+
+        @Query("page") page?: number,
+        @Query("limit") limit?: number,
+
+        @Query("search") search?: string,
+        @Query("category") category?: string,
+        @Query("stockFilter") stockFilter?: string,
+
+        @Query("sortBy") sortBy?: string,
+        @Query("sortOrder") sortOrder?: "ASC" | "DESC",
     ) {
-        return this.productService.findAll(
-            user.shopId,
-        );
+        return this.productService.findAll(user.shopId, {
+            page,
+            limit,
+            search,
+            category,
+            stockFilter,
+            sortBy,
+            sortOrder,
+        });
     }
 
+    // get stats
     @Get("stats")
     @UseGuards(JwtAuthGuard)
     getStats(@CurrentUser() user: any) {

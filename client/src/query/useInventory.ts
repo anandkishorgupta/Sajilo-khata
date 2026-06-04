@@ -13,20 +13,30 @@ export function useInventoryStats() {
 }
 
 // products filtered by search, category, stock status
+
+
 export function useProducts(filters: {
   search?: string;
   category?: string;
   stockFilter?: string;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+  page?: number;
+  limit?: number;
 }) {
   return useQuery({
-    queryKey: ["products", filters],  // ✅ filters in key = refetch on change
+    queryKey: ["products", filters],
     queryFn: async () => {
       const res = await getProducts(filters);
-      const result = res.data;
-      if (Array.isArray(result)) return result;
-      if (Array.isArray(result?.data)) return result.data;
-      if (Array.isArray(result?.products)) return result.products;
-      return [];
+
+      return {
+        products: res.data.data.map((p: any) => ({
+          ...p,
+          purchasePrice: Number(p.purchasePrice),  // ADD
+          sellingPrice: Number(p.sellingPrice),     // ADD
+        })),
+        meta: res.data.meta,
+      };
     },
   });
 }
