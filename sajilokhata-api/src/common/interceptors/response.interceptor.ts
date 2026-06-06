@@ -13,7 +13,7 @@ export class ResponseInterceptor implements NestInterceptor {
       map((response) => ({
         success: true,
         message: response?.message || 'Success',
-        data: response?.data ?? response?.items ?? response,
+        data: response?.data ?? response,
         meta: response?.meta ?? {
           total: response?.total,
           page: response?.page,
