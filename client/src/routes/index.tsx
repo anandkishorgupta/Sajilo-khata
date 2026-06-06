@@ -1,18 +1,19 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom"
 
-import AppLayout from "@/layout/AppLayout";
-import DashboardLayout from "@/layout/DashboardLayout";
+import AppLayout from "@/layout/AppLayout"
+import DashboardLayout from "@/layout/DashboardLayout"
 
-import LoginPage from "@/pages/auth/Loginpage";
-import RegisterPage from "@/pages/auth/RegisterPage";
-import DashboardPage from "@/pages/dashboard/DashboardPage";
-import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/auth/Loginpage"
+import RegisterPage from "@/pages/auth/RegisterPage"
+import DashboardPage from "@/pages/dashboard/DashboardPage"
+import HomePage from "@/pages/HomePage"
 
-import InventoryPage from "@/pages/InventoryPage";
-import BillingPage from "@/pages/BillingPage";
+import BillingPage from "@/pages/BillingPage"
+import InventoryPage from "@/pages/InventoryPage"
 
-import ProtectedRoute from "./ProtectedRoute";
-import PublicRoute from "./PublicRoute";
+import CustomersPage from "@/pages/CustomersPage"
+import ProtectedRoute from "./ProtectedRoute"
+import PublicRoute from "./PublicRoute"
 
 export const router = createBrowserRouter([
   {
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
 
       // ✅ ADD THIS
       { path: "/dashboard/billing", element: <BillingPage /> },
+      { path: "/dashboard/customers", element: <CustomersPage /> },
     ],
   },
-]);
+])
