@@ -37,8 +37,10 @@ export default function LoginForm() {
           // if (response?.data?.user) {
           //   localStorage.setItem("user", JSON.stringify(response.data.user))
           // }
+          console.log("Login successful:", response)
           const user = response?.data?.user
           const token = response?.data?.access_token
+          const shop = response?.data?.shop
 
           if (token && user) {
             // ✅ Redux
@@ -47,6 +49,7 @@ export default function LoginForm() {
             // ✅ LocalStorage backup
             localStorage.setItem("token", token)
             localStorage.setItem("user", JSON.stringify(user))
+            localStorage.setItem("shop", JSON.stringify(shop))
           }
 
           toast.success("Login successful")

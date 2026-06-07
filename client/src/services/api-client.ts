@@ -40,8 +40,9 @@ api.interceptors.response.use(
     (err) => {
         if (err.response?.status === 401) {
             store.dispatch(logout())
-            localStorage.removeItem("token")
-            localStorage.removeItem("user")
+            // localStorage.removeItem("token")
+            // localStorage.removeItem("user")
+            // localStorage.removeItem("shop")
             window.location.href = "/login"
         }
         return Promise.reject(err)
