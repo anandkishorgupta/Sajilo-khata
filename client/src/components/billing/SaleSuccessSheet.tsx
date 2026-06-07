@@ -29,6 +29,7 @@ export function SaleSuccessSheet({ open, onClose, sale }: Props) {
 
   const handleDownload = async (type: "pdf" | "thermal") => {
     if (!sale) return
+     console.log("Downloading for saleId:", sale.id) // add this
     setDownloading(true)
     try {
       const res =

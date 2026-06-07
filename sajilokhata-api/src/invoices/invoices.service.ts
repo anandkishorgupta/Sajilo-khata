@@ -12,230 +12,60 @@ import PDFDocument from "pdfkit";
 import type { Response } from "express";
 
 import { Sale } from "../sales/entities";
+import puppeteer from "puppeteer";
+import { buildInvoiceHtml } from "./invoice.template";
+
+
 
 @Injectable()
 export class InvoicesService {
   constructor(
     @InjectRepository(Sale)
     private saleRepo: Repository<Sale>,
-  ) {}
+  ) { }
 
   // =====================================
   // GENERATE PDF INVOICE
   // =====================================
-  async generateInvoice(
-    saleId: number,
-    shopId: number,
-    res: Response,
-  ) {
+  private async findSale(saleId: number, shopId: number) {
     const sale = await this.saleRepo.findOne({
-      where: {
-        id: saleId,
-
-        shop: {
-          id: shopId,
-        },
-      },
-
-      relations: {
-        shop: true,
-        customer: true,
-        items: {
-          product: true,
-        },
-      },
+      where: { id: saleId, shop: { id: shopId } },
+      relations: { shop: true, customer: true, items: { product: true } },
     });
-
-    if (!sale) {
-      throw new NotFoundException(
-        "Sale not found",
-      );
-    }
-
-    const doc = new PDFDocument({
-      margin: 40,
-    });
-
-    // =====================================
-    // RESPONSE HEADERS
-    // =====================================
-
-    res.setHeader(
-      "Content-Type",
-      "application/pdf",
-    );
-
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename=invoice-${sale.invoiceNumber}.pdf`,
-    );
-
-    doc.pipe(res);
-
-    // =====================================
-    // SHOP INFO
-    // =====================================
-
-    doc
-      .fontSize(22)
-      .text(
-        sale.shop.name || "Shop Invoice",
-        {
-          align: "center",
-        },
-      );
-
-    doc.moveDown();
-
-    // =====================================
-    // INVOICE INFO
-    // =====================================
-
-    doc
-      .fontSize(12)
-      .text(
-        `Invoice Number: ${sale.invoiceNumber}`,
-      );
-
-    doc.text(
-      `Date: ${sale.createdAt.toDateString()}`,
-    );
-
-    if (sale.customer) {
-      doc.text(
-        `Customer: ${sale.customer.name}`,
-      );
-    }
-
-    doc.moveDown();
-
-    // =====================================
-    // TABLE HEADER
-    // =====================================
-
-    doc
-      .fontSize(13)
-      .text("Items", 50);
-
-    doc.text("Qty", 300);
-
-    doc.text("Price", 370);
-
-    doc.text("Total", 470);
-
-    doc.moveDown();
-
-    // =====================================
-    // ITEMS
-    // =====================================
-
-    for (const item of sale.items) {
-      doc.text(
-        item.product.name,
-        50,
-      );
-
-      doc.text(
-        item.quantity.toString(),
-        300,
-      );
-
-      doc.text(
-        Number(
-          item.unitPrice,
-        ).toFixed(2),
-        370,
-      );
-
-      doc.text(
-        Number(
-          item.subtotal,
-        ).toFixed(2),
-        470,
-      );
-
-      doc.moveDown();
-    }
-
-    doc.moveDown();
-
-    // =====================================
-    // TOTALS
-    // =====================================
-
-    doc.text(
-      `Subtotal: Rs. ${Number(
-        sale.subtotal,
-      ).toFixed(2)}`,
-      {
-        align: "right",
-      },
-    );
-
-    doc.text(
-      `Discount: Rs. ${Number(
-        sale.discount,
-      ).toFixed(2)}`,
-      {
-        align: "right",
-      },
-    );
-
-    doc.text(
-      `Tax: Rs. ${Number(
-        sale.tax,
-      ).toFixed(2)}`,
-      {
-        align: "right",
-      },
-    );
-
-    doc
-      .fontSize(16)
-      .text(
-        `Grand Total: Rs. ${Number(
-          sale.totalAmount,
-        ).toFixed(2)}`,
-        {
-          align: "right",
-        },
-      );
-
-    doc.text(
-      `Paid: Rs. ${Number(
-        sale.paidAmount,
-      ).toFixed(2)}`,
-      {
-        align: "right",
-      },
-    );
-
-    doc.text(
-      `Due: Rs. ${Number(
-        sale.dueAmount,
-      ).toFixed(2)}`,
-      {
-        align: "right",
-      },
-    );
-
-    doc.moveDown(2);
-
-    // =====================================
-    // FOOTER
-    // =====================================
-
-    doc
-      .fontSize(11)
-      .text(
-        "Thank you for your purchase!",
-        {
-          align: "center",
-        },
-      );
-
-    doc.end();
+    if (!sale) throw new NotFoundException("Sale not found");
+    return sale;
   }
+
+  async generateInvoice(saleId: number, shopId: number, res: Response) {
+    const sale = await this.findSale(saleId, shopId);
+    const html = buildInvoiceHtml(sale);
+
+    const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: { top: "0", right: "0", bottom: "0", left: "0" },
+    });
+
+    await browser.close();
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename=invoice-${sale.invoiceNumber}.pdf`);
+    res.end(pdf);
+  }
+
+
+
+
+
+
+
+
+
 
   // =====================================
   // THERMAL RECEIPT
