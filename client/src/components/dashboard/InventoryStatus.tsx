@@ -1,4 +1,4 @@
-// src/pages/dashboard/components/InventoryStatus.tsx
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -7,16 +7,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Package } from "lucide-react"
-import { lowStock } from "./data"
-
-const stats = [
-  { l: "Total products", v: "342", h: "+12 this week" },
-  { l: "Stock value", v: "Rs 4,82,300", h: "Cost basis" },
-  { l: "Categories", v: "18", h: "6 fast-moving" },
-]
+import type { InventoryStatusData } from "./data"
+import { fetchInventoryStatus } from "./data"
+import { Link } from "react-router-dom"
 
 export default function InventoryStatus() {
+  const [data, setData] = useState<InventoryStatusData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchInventoryStatus()
+      .then(setData)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
   return (
     <Card className="shadow-soft lg:col-span-2">
       <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -24,33 +31,71 @@ export default function InventoryStatus() {
           <CardTitle className="text-base">Inventory Status</CardTitle>
           <CardDescription>Across all categories</CardDescription>
         </div>
-        <Badge className="border-0 bg-success/10 text-success">Healthy</Badge>
+        {data && data.lowStockCount === 0 && (
+          <Badge className="border-0 bg-success/10 text-success">Healthy</Badge>
+        )}
+        {data && data.lowStockCount > 0 && (
+          <Badge className="border-0 bg-warning/10 text-warning">
+            {data.lowStockCount} low
+          </Badge>
+        )}
       </CardHeader>
       <CardContent>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {stats.map((s) => (
-            <div key={s.l} className="rounded-xl border border-border p-4">
-              <div className="text-xs text-muted-foreground">{s.l}</div>
-              <div className="mt-1 font-display text-xl font-bold">{s.v}</div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                {s.h}
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24 w-full" />
+            ))}
+          </div>
+        ) : !data ? (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No inventory data
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Total products</div>
+                <div className="mt-1 font-display text-xl font-bold">
+                  {data.totalProducts}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Stock value</div>
+                <div className="mt-1 font-display text-xl font-bold">
+                  Rs {data.stockValue.toLocaleString()}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  Cost basis
+                </div>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <div className="text-xs text-muted-foreground">Low stock</div>
+                <div className="mt-1 font-display text-xl font-bold">
+                  {data.lowStockCount}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  needs reorder
+                </div>
               </div>
             </div>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center gap-3 rounded-xl bg-primary/10 p-4">
-          <Package className="h-5 w-5 text-primary" />
-          <p className="text-sm">
-            <span className="font-semibold">{lowStock.length} products</span>{" "}
-            are running low.{" "}
-            <a
-              href="#"
-              className="font-semibold text-primary underline-offset-2 hover:underline"
-            >
-              Review now
-            </a>
-          </p>
-        </div>
+            {data.lowStockCount > 0 && (
+              <div className="mt-4 flex items-center gap-3 rounded-xl bg-primary/10 p-4">
+                <Package className="h-5 w-5 text-primary" />
+                <p className="text-sm">
+                  <span className="font-semibold">{data.lowStockCount} products</span>{" "}
+                  are running low.{" "}
+                  <Link
+                    to="/dashboard/inventory"
+                    className="font-semibold text-primary underline-offset-2 hover:underline"
+                  >
+                    Review now
+                  </Link>
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   )
