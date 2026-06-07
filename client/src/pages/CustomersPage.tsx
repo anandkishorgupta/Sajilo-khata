@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import type { Customer } from "@/api/customers"
 import { getCustomers, deleteCustomer } from "@/api/customers"
+import { useDebounce } from "@/hooks/useDebounce"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -20,8 +21,10 @@ import toast from "react-hot-toast"
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 400)
 
   // Sheets
   const [addOpen, setAddOpen] = useState(false)
@@ -30,11 +33,15 @@ export default function CustomersPage() {
   const [detailId, setDetailId] = useState<number | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const loadCustomers = async () => {
+  const loadCustomers = async (searchQuery?: string) => {
     setLoading(true)
     try {
-      const res = await getCustomers()
-      setCustomers(res.data?.data ?? res.data ?? [])
+      const res = await getCustomers(searchQuery)
+      const data = res.data?.data ?? res.data ?? []
+      setCustomers(data)
+      if (!searchQuery) {
+        setTotalCount(data.length)
+      }
     } catch {
       toast.error("Failed to load customers")
     } finally {
@@ -43,8 +50,8 @@ export default function CustomersPage() {
   }
 
   useEffect(() => {
-    loadCustomers()
-  }, [])
+    loadCustomers(debouncedSearch || undefined)
+  }, [debouncedSearch])
 
   const handleDelete = async (id: number) => {
     const ok = window.confirm("Delete this customer? This cannot be undone.")
@@ -52,18 +59,11 @@ export default function CustomersPage() {
     try {
       await deleteCustomer(id)
       toast.success("Customer deleted")
-      loadCustomers()
+      loadCustomers(debouncedSearch || undefined)
     } catch {
       toast.error("Failed to delete customer")
     }
   }
-
-  const filtered = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.phone && c.phone.includes(search)) ||
-      (c.address && c.address.toLowerCase().includes(search.toLowerCase()))
-  )
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -91,7 +91,7 @@ export default function CustomersPage() {
             <div>
               <p className="text-sm text-muted-foreground">Total Customers</p>
               <p className="text-2xl font-bold">
-                {loading ? <Skeleton className="h-8 w-12" /> : customers.length}
+                {loading ? <Skeleton className="h-8 w-12" /> : totalCount}
               </p>
             </div>
           </CardContent>
@@ -122,7 +122,7 @@ export default function CustomersPage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : customers.length === 0 ? (
             <div className="py-12 text-center">
               <Users className="mx-auto h-12 w-12 text-muted-foreground/30" />
               <p className="mt-2 text-sm text-muted-foreground">
@@ -141,7 +141,7 @@ export default function CustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => (
+                {customers.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">{c.name}</TableCell>
                     <TableCell>{c.phone || "-"}</TableCell>
@@ -194,14 +194,14 @@ export default function CustomersPage() {
       <CustomerSheet
         open={addOpen}
         onOpenChange={setAddOpen}
-        onSaved={loadCustomers}
+        onSaved={() => loadCustomers(debouncedSearch || undefined)}
       />
 
       <CustomerSheet
         open={editOpen}
         onOpenChange={setEditOpen}
         customer={editCustomer}
-        onSaved={loadCustomers}
+        onSaved={() => loadCustomers(debouncedSearch || undefined)}
       />
 
       <CustomerDetailSheet

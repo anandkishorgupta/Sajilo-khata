@@ -25,7 +25,8 @@ export type CustomerBalance = {
   balance: number
 }
 
-export const getCustomers = () => api.get("/customers")
+export const getCustomers = (search?: string) =>
+  api.get("/customers", { params: search ? { search } : {} })
 
 export const getCustomer = (id: number) => api.get(`/customers/${id}`)
 

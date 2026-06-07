@@ -40,18 +40,25 @@ export class CustomersService {
     }
 
     // GET ALL CUSTOMERS
-    async findAll(shopId: number) {
-        return this.customerRepo.find({
-            where: {
-                shop: {
-                    id: shopId,
-                },
-            },
+    async findAll(shopId: number, search?: string) {
+        const qb = this.customerRepo
+            .createQueryBuilder("customer")
+            .where("customer.shop_id = :shopId", { shopId });
 
-            order: {
-                createdAt: "DESC",
-            },
-        });
+        if (search) {
+            qb.andWhere(
+                `(
+                    LOWER(customer.name) LIKE LOWER(:search)
+                    OR customer.phone LIKE :search
+                    OR LOWER(customer.address) LIKE LOWER(:search)
+                )`,
+                { search: `%${search}%` },
+            );
+        }
+
+        qb.orderBy("customer.created_at", "DESC");
+
+        return qb.getMany();
     }
 
     // GET SINGLE CUSTOMER

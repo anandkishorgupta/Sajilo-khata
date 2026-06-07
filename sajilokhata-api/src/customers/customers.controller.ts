@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 
@@ -49,9 +50,13 @@ export class CustomersController {
   findAll(
     @CurrentUser()
     user: any,
+
+    @Query("search")
+    search?: string,
   ) {
     return this.customersService.findAll(
       user.shopId,
+      search,
     );
   }
 

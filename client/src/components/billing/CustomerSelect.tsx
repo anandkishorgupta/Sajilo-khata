@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { getCustomers, createCustomer } from "@/api/billing"
+import { useDebounce } from "@/hooks/useDebounce"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -30,23 +31,21 @@ type Props = {
 export function CustomerSelect({ open, onOpenChange, selected, onSelect }: Props) {
   const [customers, setCustomers] = useState<Customer[]>([])
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebounce(search, 400)
+  const [loading, setLoading] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ name: "", phone: "", address: "" })
 
   useEffect(() => {
-    if (open) {
-      getCustomers()
-        .then((res) => setCustomers(res.data?.data ?? res.data ?? []))
-        .catch(() => toast.error("Failed to load customers"))
-    }
-  }, [open])
+    if (!open) return
 
-  const filtered = customers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search)
-  )
+    setLoading(true)
+    getCustomers(debouncedSearch || undefined)
+      .then((res) => setCustomers(res.data?.data ?? res.data ?? []))
+      .catch(() => toast.error("Failed to load customers"))
+      .finally(() => setLoading(false))
+  }, [open, debouncedSearch])
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
@@ -111,7 +110,11 @@ export function CustomerSelect({ open, onOpenChange, selected, onSelect }: Props
           </div>
 
           <div className="max-h-[300px] space-y-1 overflow-y-auto">
-            {filtered.map((c) => (
+            {loading ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                Searching...
+              </p>
+            ) : customers.map((c) => (
               <button
                 key={c.id}
                 onClick={() => {
@@ -126,7 +129,7 @@ export function CustomerSelect({ open, onOpenChange, selected, onSelect }: Props
                 <p className="text-xs text-muted-foreground">{c.phone}</p>
               </button>
             ))}
-            {filtered.length === 0 && (
+            {!loading && customers.length === 0 && (
               <p className="py-4 text-center text-sm text-muted-foreground">
                 No customers found
               </p>

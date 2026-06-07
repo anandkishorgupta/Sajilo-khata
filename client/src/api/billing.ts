@@ -18,7 +18,8 @@ export type CreateSalePayload = {
 export const createSale = (data: CreateSalePayload) =>
   api.post("/sales", data);
 
-export const getCustomers = () => api.get("/customers");
+export const getCustomers = (search?: string) =>
+  api.get("/customers", { params: search ? { search } : {} });
 
 export const createCustomer = (data: {
   name: string;
