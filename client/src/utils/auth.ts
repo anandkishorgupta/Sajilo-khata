@@ -22,3 +22,8 @@ export const getStoredUser = () => {
 export const getStoredToken = () => {
   return localStorage.getItem("token")
 }
+
+export const clearAuth = () => {
+  localStorage.removeItem("token")
+  localStorage.removeItem("user")
+}

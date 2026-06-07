@@ -1,29 +1,7 @@
 import { ArrowRight, Store } from "lucide-react"
 import { Link } from "react-router-dom"
-
 export function Header() {
   return (
-    // <header className="sticky top-0 z-50 border-b bg-background/70 backdrop-blur-xl">
-    //   <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
-    //     <Link to="/" className="flex items-center gap-2">
-    //       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg">
-    //         <Store className="h-5 w-5" />
-    //       </div>
-
-    //       <span className="text-lg font-bold tracking-tight">
-    //         Sajilo Khata
-    //       </span>
-    //     </Link>
-
-    //     <Link
-    //       to="/login"
-    //       className="text-sm text-muted-foreground hover:text-foreground"
-    //     >
-    //       Already have account?
-    //     </Link>
-    //   </div>
-    // </header>
-
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
         <Link to="/" className="flex items-center gap-2">
@@ -31,21 +9,28 @@ export function Header() {
             <Store className="h-5 w-5" />
           </div>
 
-          <span className="text-lg font-bold tracking-tight">
-            Sajilo Khata
-          </span>
+          <span className="text-lg font-bold tracking-tight">Sajilo Khata</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">
+          <a
+            href="#features"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             Features
           </a>
 
-          <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground">
+          <a
+            href="#pricing"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             Pricing
           </a>
 
-          <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground">
+          <a
+            href="#testimonials"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
             Customers
           </a>
         </nav>
@@ -70,8 +55,3 @@ export function Header() {
     </header>
   )
 }
-
-
-
-
-
