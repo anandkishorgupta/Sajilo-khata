@@ -46,7 +46,7 @@ export default function FeaturesSection() {
     <section id="features" className="mx-auto max-w-7xl px-5 py-20">
       <div className="max-w-2xl">
         <div className="text-xs font-semibold tracking-widest text-primary uppercase">
-          Why Karobar Lite
+          Why Sajilo khata
         </div>
         <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
           Everything your shop needs. Nothing it doesn't.

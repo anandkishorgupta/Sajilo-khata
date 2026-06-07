@@ -41,7 +41,7 @@ export default function ModulesSection() {
             </h2>
             <p className="mt-3 text-muted-foreground">
               Whether you sell daal-chamal, cosmetics, mobiles, or hardware —
-              Karobar Lite adapts to your workflow.
+              Sajilo khata adapts to your workflow.
             </p>
             <div className="mt-6 grid grid-cols-2 gap-2">
               {shopTypes.map((s) => (

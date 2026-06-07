@@ -1,6 +1,7 @@
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -8,17 +9,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
 } from "@/components/ui/sidebar"
 
 import {
+  BarChart3,
   LayoutDashboard,
   Package,
   Receipt,
-  Users,
-  BarChart3,
   Settings,
   Store,
+  Users,
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
@@ -96,7 +96,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="rounded-xl bg-sidebar-accent p-3 text-xs text-sidebar-foreground/80 group-data-[collapsible=icon]:hidden">
-          Karobar Lite v1.0
+          Sajilo khata v1.0
         </div>
       </SidebarFooter>
     </Sidebar>
