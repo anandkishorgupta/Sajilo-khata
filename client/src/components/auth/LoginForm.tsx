@@ -1,10 +1,14 @@
 import { useLogin } from "@/hooks/useLogin"
+import { useAppDispatch } from "@/store/hooks"
+import { loginSuccess } from "@/store/slices/authSlice"
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { Link, useNavigate } from "react-router-dom"
+
 export default function LoginForm() {
   const navigate = useNavigate()
+  const dispatch = useAppDispatch()
 
   const loginMutation = useLogin()
 
@@ -26,12 +30,23 @@ export default function LoginForm() {
       },
       {
         onSuccess: (response) => {
-          console.log(response)
-          if (response?.data?.access_token) {
-            localStorage.setItem("token", response.data.access_token)
-          }
-          if (response?.data?.user) {
-            localStorage.setItem("user", JSON.stringify(response.data.user))
+          // console.log(response)
+          // if (response?.data?.access_token) {
+          //   localStorage.setItem("token", response.data.access_token)
+          // }
+          // if (response?.data?.user) {
+          //   localStorage.setItem("user", JSON.stringify(response.data.user))
+          // }
+          const user = response?.data?.user
+          const token = response?.data?.access_token
+
+          if (token && user) {
+            // ✅ Redux
+            dispatch(loginSuccess({ user, token }))
+
+            // ✅ LocalStorage backup
+            localStorage.setItem("token", token)
+            localStorage.setItem("user", JSON.stringify(user))
           }
 
           toast.success("Login successful")

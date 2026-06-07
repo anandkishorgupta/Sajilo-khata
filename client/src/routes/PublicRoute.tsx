@@ -1,14 +1,13 @@
-import { getToken } from "@/utils/auth"
+import { useSelector } from "react-redux"
 import { Navigate } from "react-router-dom"
+import type { RootState } from "@/store/store"
 
-type Props = {
-  children: React.ReactNode
-}
+export default function PublicRoute({ children }: any) {
+  const { isAuthenticated } = useSelector(
+    (state: RootState) => state.auth
+  )
 
-export default function PublicRoute({ children }: Props) {
-  const token = getToken()
-
-  if (token) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
 
