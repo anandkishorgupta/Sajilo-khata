@@ -81,4 +81,44 @@ export class DashboardController {
       user.shopId,
     );
   }
+
+  // =====================================
+  // RECENT TRANSACTIONS
+  // =====================================
+  @Get("recent-transactions")
+  recentTransactions(@CurrentUser() user: any) {
+    return this.dashboardService.recentTransactions(user.shopId);
+  }
+
+  // =====================================
+  // PAYMENT METHODS
+  // =====================================
+  @Get("payment-methods")
+  paymentMethods(@CurrentUser() user: any) {
+    return this.dashboardService.paymentMethods(user.shopId);
+  }
+
+  // =====================================
+  // WEEKLY SALES
+  // =====================================
+  @Get("weekly-sales")
+  weeklySales(@CurrentUser() user: any) {
+    return this.dashboardService.weeklySales(user.shopId);
+  }
+
+  // =====================================
+  // EXPENSE BREAKDOWN
+  // =====================================
+  @Get("expense-breakdown")
+  expenseBreakdown(@CurrentUser() user: any) {
+    return this.dashboardService.expenseBreakdown(user.shopId);
+  }
+
+  // =====================================
+  // INVENTORY STATUS
+  // =====================================
+  @Get("inventory-status")
+  inventoryStatus(@CurrentUser() user: any) {
+    return this.dashboardService.inventoryStatus(user.shopId);
+  }
 }

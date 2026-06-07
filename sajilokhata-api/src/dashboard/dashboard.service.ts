@@ -39,6 +39,9 @@ export class DashboardService {
           id: shopId,
         },
       },
+      relations: {
+        items: true,
+      },
     });
 
     const purchases =
@@ -293,6 +296,121 @@ export class DashboardService {
 
       remainingDue:
         totalCredit - totalPayment,
+    };
+  }
+
+  // =====================================
+  // RECENT TRANSACTIONS
+  // =====================================
+  async recentTransactions(shopId: number) {
+    const sales = await this.saleRepo.find({
+      where: { shop: { id: shopId } },
+      relations: { customer: true },
+      order: { createdAt: 'DESC' },
+      take: 10,
+    });
+
+    return sales.map((s) => ({
+      id: s.id,
+      invoiceNumber: s.invoiceNumber,
+      customer: s.customer?.name ?? 'Walk-in',
+      amount: Number(s.totalAmount),
+      paymentMethod: s.paymentMethod,
+      paymentStatus: s.paymentStatus,
+      createdAt: s.createdAt,
+    }));
+  }
+
+  // =====================================
+  // PAYMENT METHOD SPLIT
+  // =====================================
+  async paymentMethods(shopId: number) {
+    const sales = await this.saleRepo.find({
+      where: { shop: { id: shopId } },
+    });
+
+    const totals: Record<string, number> = {};
+    for (const sale of sales) {
+      const method = sale.paymentMethod;
+      totals[method] = (totals[method] || 0) + Number(sale.totalAmount);
+    }
+
+    const grandTotal = Object.values(totals).reduce((s, v) => s + v, 0);
+
+    return Object.entries(totals).map(([method, amount]) => ({
+      method,
+      amount,
+      percentage: grandTotal > 0 ? Math.round((amount / grandTotal) * 100) : 0,
+    }));
+  }
+
+  // =====================================
+  // WEEKLY SALES
+  // =====================================
+  async weeklySales(shopId: number) {
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const sales = await this.saleRepo.find({
+      where: { shop: { id: shopId } },
+      order: { createdAt: 'ASC' },
+    });
+
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const grouped: Record<string, number> = {};
+
+    for (const sale of sales) {
+      const d = new Date(sale.createdAt);
+      if (d >= weekAgo) {
+        const label = days[d.getDay()];
+        grouped[label] = (grouped[label] || 0) + Number(sale.totalAmount);
+      }
+    }
+
+    return days.map((d) => ({ day: d, amount: grouped[d] || 0 }));
+  }
+
+  // =====================================
+  // EXPENSE BREAKDOWN BY CATEGORY
+  // =====================================
+  async expenseBreakdown(shopId: number) {
+    const expenses = await this.expenseRepo.find({
+      where: { shop: { id: shopId } },
+    });
+
+    const grouped: Record<string, number> = {};
+    for (const exp of expenses) {
+      const cat = exp.category || 'Other';
+      grouped[cat] = (grouped[cat] || 0) + Number(exp.amount);
+    }
+
+    return Object.entries(grouped)
+      .map(([category, amount]) => ({ category, amount }))
+      .sort((a, b) => b.amount - a.amount);
+  }
+
+  // =====================================
+  // INVENTORY STATUS
+  // =====================================
+  async inventoryStatus(shopId: number) {
+    const products = await this.productRepo.find({
+      where: { shop: { id: shopId } },
+    });
+
+    const totalProducts = products.length;
+    const lowStockCount = products.filter(
+      (p) => p.stock <= p.lowStockLimit,
+    ).length;
+
+    const stockValue = products.reduce(
+      (sum, p) => sum + Number(p.purchasePrice) * p.stock,
+      0,
+    );
+
+    return {
+      totalProducts,
+      lowStockCount,
+      stockValue,
     };
   }
 }

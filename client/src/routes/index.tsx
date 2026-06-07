@@ -11,9 +11,11 @@ import HomePage from "@/pages/HomePage"
 import BillingPage from "@/pages/BillingPage"
 import InventoryPage from "@/pages/InventoryPage"
 
+import AnalyticsPage from "@/pages/AnalyticsPage"
 import CustomersPage from "@/pages/CustomersPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
+import SettingsPage from "@/pages/SettingsPage";
 
 export const router = createBrowserRouter([
   {
@@ -53,6 +55,8 @@ export const router = createBrowserRouter([
       // ✅ ADD THIS
       { path: "/dashboard/billing", element: <BillingPage /> },
       { path: "/dashboard/customers", element: <CustomersPage /> },
+      { path: "/dashboard/analytics", element: <AnalyticsPage /> },
+      { path: "/dashboard/settings", element: <SettingsPage /> },
     ],
   },
 ])
