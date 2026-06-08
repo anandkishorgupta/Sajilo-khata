@@ -10,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
 import {
   BarChart3,
   Crown,
@@ -19,6 +18,7 @@ import {
   Receipt,
   Settings,
   Store,
+  Tags,
   Users,
 } from "lucide-react"
 
@@ -34,6 +34,11 @@ const items = [
     title: "Inventory",
     icon: Package,
     url: "/dashboard/inventory",
+  },
+  {
+    title: "Category",
+    icon: Tags,
+    url: "/dashboard/categories",
   },
   {
     title: "Billing",

@@ -1,16 +1,18 @@
 import { api } from "@/services/api-client";
 
 export type Product = {
-  id: number;           // ✅ numeric id, was _id: string
+  id: number;
   name: string;
-  sku: string;
-  category: string;
+  barcode: string;
+  category: {
+    id: number;
+    name: string;
+  };
   purchasePrice: number;
   sellingPrice: number;
   stock: number;
   lowStockLimit: number;
   imageUrl?: string;
-  // expiryDate?: string;
 };
 
 export type InventoryStats = {
@@ -21,14 +23,10 @@ export type InventoryStats = {
   stockValue: number;
 };
 
-// export const getProducts = (params?: {
-//   search?: string;
-//   category?: string;
-//   stockFilter?: string;
-// }) => api.get<Product[]>("/products", { params });
+
 export const getProducts = (params?: {
   search?: string;
-  category?: string;
+  categoryId?: number;
   stockFilter?: string;
   sortBy?: string;
   sortOrder?: "ASC" | "DESC";
@@ -42,8 +40,8 @@ export const getInventoryStats = () =>
 export const createProduct = async (data: any, imageFile?: File) => {
   const formData = new FormData();
   formData.append("name", data.name);
-  formData.append("sku", data.sku);
-  formData.append("category", data.category);
+  formData.append("barcode", data.barcode);
+  formData.append("categoryId", String(data.categoryId)); // FIX
   formData.append("purchasePrice", String(data.purchasePrice));
   formData.append("sellingPrice", String(data.sellingPrice));
   formData.append("stock", String(data.stock));
@@ -60,8 +58,8 @@ export const createProduct = async (data: any, imageFile?: File) => {
 export const updateProduct = async (id: number, data: any, image?: File) => {
   const formData = new FormData();
   formData.append("name", data.name);
-  formData.append("sku", data.sku);
-  formData.append("category", data.category);
+  formData.append("barcode", data.barcode);
+  formData.append("categoryId", String(data.categoryId));
   formData.append("purchasePrice", String(data.purchasePrice));
   formData.append("sellingPrice", String(data.sellingPrice));
   formData.append("stock", String(data.stock));

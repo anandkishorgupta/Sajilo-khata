@@ -21,7 +21,8 @@ import { AlertTriangle, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa"
-
+import { useQuery } from "@tanstack/react-query"
+import { getCategories } from "@/api/categories"
 import {
   Pagination,
   PaginationContent,
@@ -43,13 +44,13 @@ export default function InventoryPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [editOpen, setEditOpen] = useState(false)
-
+  const [categoryId, setCategoryId] = useState<number | "">("")
   const debouncedSearch = useDebounce(search, 400)
 
   const { data: stats, isLoading: statsLoading } = useInventoryStats()
   const { data, isLoading: productsLoading } = useProducts({
     search: debouncedSearch,
-    category,
+    categoryId,
     stockFilter,
     sortBy,
     sortOrder,
@@ -59,7 +60,8 @@ export default function InventoryPage() {
 
   const products = data?.products ?? []
   const meta = data?.meta
-
+  console.log("RAW DATA:", data)
+  console.log("PRODUCTS:", products)
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
@@ -92,6 +94,11 @@ export default function InventoryPage() {
     setSortOrder("DESC")
     setPage(1)
   }
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+    select: (res) => res?.data?.data ?? [],
+  })
   return (
     <div className="flex flex-col gap-1 p-6">
       {/* Header */}
@@ -166,7 +173,7 @@ export default function InventoryPage() {
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Search products"
+                placeholder="Search products, SKU…"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -177,16 +184,19 @@ export default function InventoryPage() {
             Category
             <select
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
-              value={category}
+              value={categoryId}
               onChange={(e) => {
-                setCategory(e.target.value)
+                setCategoryId(Number(e.target.value))
                 setPage(1)
               }}
             >
               <option value="">All categories</option>
-              <option value="Drinks">Drinks</option>
-              <option value="Snacks">Snacks</option>
-              {/* add your categories dynamically if you have a /categories endpoint */}
+
+              {categories.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
             <select
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
@@ -240,7 +250,7 @@ export default function InventoryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>Barcode</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Buy</TableHead>
                     <TableHead className="text-right">Sell</TableHead>
@@ -304,12 +314,10 @@ export default function InventoryPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell className="font-mono">
-                            {p.barcode}
-                          </TableCell>
+                          <TableCell className="font-mono">{p.sku}</TableCell>
 
                           <TableCell>
-                            <Badge variant="outline">{p.category}</Badge>
+                            <Badge variant="outline">{p?.category?.name}</Badge>
                           </TableCell>
 
                           <TableCell className="text-right">

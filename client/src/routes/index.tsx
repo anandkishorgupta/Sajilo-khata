@@ -12,10 +12,11 @@ import BillingPage from "@/pages/BillingPage"
 import InventoryPage from "@/pages/InventoryPage"
 
 import AnalyticsPage from "@/pages/AnalyticsPage"
+import CategoriesPage from "@/pages/CategoriesPage"
 import CustomersPage from "@/pages/CustomersPage"
+import SettingsPage from "@/pages/SettingsPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
-import SettingsPage from "@/pages/SettingsPage";
 
 export const router = createBrowserRouter([
   {
@@ -57,6 +58,7 @@ export const router = createBrowserRouter([
       { path: "/dashboard/customers", element: <CustomersPage /> },
       { path: "/dashboard/analytics", element: <AnalyticsPage /> },
       { path: "/dashboard/settings", element: <SettingsPage /> },
+      { path: "/dashboard/categories", element: <CategoriesPage /> },
     ],
   },
 ])

@@ -1,14 +1,21 @@
+import { getCategories } from "@/api/categories"
 import { createProduct, updateProduct } from "@/api/inventory"
 import { Button } from "@/components/ui/button"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
 import {
   Sheet,
@@ -17,12 +24,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useQueryClient } from "@tanstack/react-query"
-import { Package } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Check, ChevronsUpDown, Package } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
+
 type Props = {
   open: boolean
   onClose: () => void
@@ -32,35 +40,24 @@ type Props = {
 
 type FormValues = {
   name: string
-  sku: string
-  category: string
+  barcode: string
+  categoryId: number
   purchasePrice: number
   sellingPrice: number
   stock: number
   lowStockLimit: number
-  // expiryDate: string;
+  expiryDate: string
 }
-
-const categories = [
-  "Grocery",
-  "Snacks",
-  "Beverages",
-  "Cosmetics",
-  "Mobile",
-  "Hardware",
-  "Stationery",
-  "Other",
-]
 
 const defaultValues: FormValues = {
   name: "",
-  sku: "",
-  category: "",
+  barcode: "",
+  categoryId: 0,
   purchasePrice: 0,
   sellingPrice: 0,
   stock: 0,
   lowStockLimit: 0,
-  // expiryDate: "",
+  expiryDate: "",
 }
 
 export default function AddProductSheet({
@@ -71,7 +68,14 @@ export default function AddProductSheet({
 }: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [preview, setPreview] = useState("")
+  const [categoryOpen, setCategoryOpen] = useState(false)
   const queryClient = useQueryClient()
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+    select: (res) => res?.data?.data ?? [],
+  })
 
   // Cleanup preview URL on unmount or when preview changes
   useEffect(() => {
@@ -109,7 +113,6 @@ export default function AddProductSheet({
       const file = acceptedFiles[0]
       if (!file) return
 
-      // Clean up old preview
       if (preview && preview.startsWith("blob:")) {
         URL.revokeObjectURL(preview)
       }
@@ -126,21 +129,30 @@ export default function AddProductSheet({
     setValue,
     reset,
     setError,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues })
 
-  // Reset form when product changes (for edit mode)
+  // Register categoryId once with validation — no hidden input needed
+  useEffect(() => {
+    register("categoryId", {
+      required: "Category is required",
+      validate: (v) => v !== 0 || "Category is required",
+    })
+  }, [register])
+
+  // Reset form when product changes (edit mode)
   useEffect(() => {
     if (product) {
       reset({
         name: product.name,
-        sku: product.sku,
-        category: product.category,
+        barcode: product.barcode || "",
+        categoryId: product.category?.id || 0,
         purchasePrice: product.purchasePrice,
         sellingPrice: product.sellingPrice,
         stock: product.stock,
         lowStockLimit: product.lowStockLimit,
-        // expiryDate: product.expiryDate || "",
+        expiryDate: product.expiryDate || "",
       })
       setPreview(product.imageUrl || "")
       setImageFile(null)
@@ -154,6 +166,8 @@ export default function AddProductSheet({
   // Live margin preview
   const purchasePrice = watch("purchasePrice")
   const sellingPrice = watch("sellingPrice")
+  const categoryId = watch("categoryId")
+
   const margin =
     purchasePrice > 0 && sellingPrice > 0
       ? Math.round(((sellingPrice - purchasePrice) / sellingPrice) * 100)
@@ -166,17 +180,21 @@ export default function AddProductSheet({
     return "bg-red-500/10 text-red-500"
   }
 
+  const selectedCategoryName = categoryId
+    ? (categories as any[]).find((c) => c.id === categoryId)?.name
+    : null
+
   async function onSubmit(data: FormValues) {
     try {
       const payload = {
         name: data.name,
-        sku: data.sku.toUpperCase(),
-        category: data.category,
+        barcode: data.barcode,
+        categoryId: data.categoryId,
         purchasePrice: data.purchasePrice,
         sellingPrice: data.sellingPrice,
         stock: data.stock,
         lowStockLimit: data.lowStockLimit,
-        // expiryDate: data.expiryDate || undefined,
+        expiryDate: data.expiryDate || undefined,
       }
 
       if (product) {
@@ -187,28 +205,28 @@ export default function AddProductSheet({
         toast.success("Product added successfully!")
       }
 
-      // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ["products"] })
       await queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
 
-      onSuccess?.()
+      // Reset state before calling onSuccess to avoid stale flash
       handleClose()
+      onSuccess?.()
     } catch (err: any) {
       const message =
         err?.response?.data?.message || err?.message || "Something went wrong"
-      toast.error(message) // ADD — shows API error
-      setError("root", { message }) // keep inline error too if you want
+      toast.error(message)
+      setError("root", { message })
     }
   }
 
   function handleClose() {
-    // Clean up preview before closing
     if (preview && preview.startsWith("blob:")) {
       URL.revokeObjectURL(preview)
     }
     reset(defaultValues)
     setImageFile(null)
     setPreview("")
+    setCategoryOpen(false)
     onClose()
   }
 
@@ -269,55 +287,86 @@ export default function AddProductSheet({
             </Field>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="SKU / Barcode" error={errors.sku?.message} required>
+              <Field label="Barcode" error={errors.barcode?.message} required>
                 <Input
-                  placeholder="e.g. KIR-001"
-                  className="font-mono uppercase"
-                  {...register("sku", {
-                    required: "SKU is required",
-                    setValueAs: (v) => v.toUpperCase(),
+                  placeholder="e.g. 8901234567890"
+                  className="font-mono"
+                  {...register("barcode", {
+                    required: "Barcode is required",
                     minLength: {
-                      value: 2,
-                      message: "SKU must be at least 2 characters",
+                      value: 3,
+                      message: "Barcode must be valid",
                     },
                   })}
                 />
               </Field>
 
-              <Field label="Category" error={errors.category?.message} required>
-                <Select
-                  value={watch("category")}
-                  onValueChange={(v) =>
-                    setValue("category", v, { shouldValidate: true })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  type="hidden"
-                  {...register("category", {
-                    required: "Category is required",
-                  })}
-                />
+              {/* Combobox for category — searchable, keyboard navigable */}
+              <Field
+                label="Category"
+                error={errors.categoryId?.message}
+                required
+              >
+                <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={categoryOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      <span className="truncate">
+                        {selectedCategoryName ?? "Select category..."}
+                      </span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[--radix-popover-trigger-width] p-0"
+                    align="start"
+                  >
+                    <Command>
+                      <CommandInput placeholder="Search category..." />
+                      <CommandList>
+                        <CommandEmpty>No category found.</CommandEmpty>
+                        <CommandGroup>
+                          {(categories as any[]).map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={c.name}
+                              onSelect={() => {
+                                setValue("categoryId", c.id, {
+                                  shouldValidate: true,
+                                })
+                                setCategoryOpen(false)
+                              }}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 transition-opacity ${
+                                  categoryId === c.id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                }`}
+                              />
+                              {c.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </Field>
             </div>
 
-            {/* Expiry Date (Optional) */}
-            {/* <Field label="Expiry Date (Optional)" error={errors.expiryDate?.message}>
-              <Input
-                type="date"
-                {...register("expiryDate")}
-              />
-            </Field> */}
+            {/* Expiry Date */}
+            <Field
+              label="Expiry Date (Optional)"
+              error={errors.expiryDate?.message}
+            >
+              <Input type="date" {...register("expiryDate")} />
+            </Field>
 
             {/* Image upload */}
             <Field label="Product Image">
@@ -401,6 +450,8 @@ export default function AddProductSheet({
                     valueAsNumber: true,
                     required: "Purchase price is required",
                     min: { value: 0, message: "Price cannot be negative" },
+                    // Re-validate sellingPrice whenever purchasePrice changes
+                    onChange: () => trigger("sellingPrice"),
                   })}
                 />
               </Field>
@@ -421,7 +472,7 @@ export default function AddProductSheet({
                     min: { value: 0, message: "Price cannot be negative" },
                     validate: (value) =>
                       value >= (purchasePrice || 0) ||
-                      "Selling price must be greater than or equal to purchase price",
+                      "Selling price must be ≥ purchase price",
                   })}
                 />
               </Field>
