@@ -19,6 +19,7 @@ import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { InvoicesModule } from './invoices/invoices.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { InvoicesModule } from './invoices/invoices.module';
     StockMovementsModule,
     DashboardModule,
     InvoicesModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

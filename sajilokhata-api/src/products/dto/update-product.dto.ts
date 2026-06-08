@@ -5,13 +5,14 @@ export class UpdateProductDto {
     @IsString()
     name?: string;
 
-    @IsOptional()
-    @IsString()
-    sku?: string;
+    // @IsOptional()
+    // @IsString()
+    // sku?: string;
 
     @IsOptional()
-    @IsString()
-    category?: string;
+    @Type(() => Number)
+    @IsNumber()
+    categoryId?: number;
 
     @IsOptional()
     @IsString()

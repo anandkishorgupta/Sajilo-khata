@@ -8,10 +8,11 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import { Category } from '../../categories/entities';
+import { PurchaseItem } from '../../purchases/entities';
+import { SaleItem } from '../../sales/entities';
 import { Shop } from '../../shops/entities';
 import { StockMovement } from '../../stock-movements/entities';
-import { SaleItem } from '../../sales/entities';
-import { PurchaseItem } from '../../purchases/entities';
 
 @Entity('products')
 export class Product {
@@ -27,8 +28,8 @@ export class Product {
     @Column()
     name: string;
 
-    @Column()
-    sku: string;
+    // @Column()
+    // sku: string;
 
     @Column({ nullable: true })
     imageUrl: string;
@@ -39,8 +40,15 @@ export class Product {
     @Column({ nullable: true })
     barcode: string;
 
-    @Column({ default: 'General' })
-    category: string;
+    // @Column({ default: 'General' })
+    // category: string;
+
+    @ManyToOne(() => Category, {
+        nullable: true,
+        onDelete: 'SET NULL',
+    })
+    @JoinColumn({ name: 'category_id' })
+    category: Category;
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     purchasePrice: number;

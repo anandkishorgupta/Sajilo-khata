@@ -166,7 +166,7 @@ export default function InventoryPage() {
               <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-9"
-                placeholder="Search products, SKU…"
+                placeholder="Search products"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -240,7 +240,7 @@ export default function InventoryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Buy</TableHead>
                     <TableHead className="text-right">Sell</TableHead>
@@ -304,7 +304,9 @@ export default function InventoryPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell className="font-mono">{p.sku}</TableCell>
+                          <TableCell className="font-mono">
+                            {p.barcode}
+                          </TableCell>
 
                           <TableCell>
                             <Badge variant="outline">{p.category}</Badge>

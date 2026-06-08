@@ -4,16 +4,17 @@ export class CreateProductDto {
     @IsString()
     name: string;  // product name
 
-    @IsString()
-    sku: string;
+    // @IsString()
+    // sku: string;
 
     @IsOptional()
     @IsString()
     barcode?: string;
 
     @IsOptional()
-    @IsString()
-    category?: string;
+    @Type(() => Number)
+    @IsNumber()
+    categoryId?: number;
 
     @Type(() => Number)
     @IsNumber()

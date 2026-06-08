@@ -25,6 +25,7 @@ export class ProductsService {
     const product = this.productRepo.create({
       ...dto,
       shop: { id: shopId },
+      category: dto.categoryId ? { id: dto.categoryId } as any : null,
       imageUrl: imageData.url,
       imageFileId: imageData.fileId,
     });
@@ -47,33 +48,25 @@ export class ProductsService {
 
     const qb = this.productRepo
       .createQueryBuilder("product")
-      .where("product.shop_id = :shopId", {
-        shopId,
-      });
+      .leftJoinAndSelect("product.category", "category") // ← always
+      .where("product.shop_id = :shopId", { shopId });
 
-    // Search
     if (filters.search) {
       qb.andWhere(
         `
-      (
-        LOWER(product.name) LIKE LOWER(:search)
-        OR LOWER(product.sku) LIKE LOWER(:search)
-      )
-    `,
+    (
+      LOWER(product.name) LIKE LOWER(:search)
+      OR product.barcode = :exactBarcode
+    )
+  `,
         {
           search: `%${filters.search}%`,
         },
       );
     }
 
-    // Category
     if (filters.category) {
-      qb.andWhere(
-        "product.category = :category",
-        {
-          category: filters.category,
-        },
-      );
+      qb.andWhere("category.id = :categoryId", { categoryId: filters.category });
     }
 
     // Stock Filter
@@ -137,11 +130,14 @@ export class ProductsService {
   async getStats(shopId: number) {
     const products = await this.productRepo.find({
       where: { shop: { id: shopId } },
+      relations: ['category'],
     });
 
     const total = products.length;
     const lowStock = products.filter((p) => p.stock <= p.lowStockLimit).length;
-    const categories = new Set(products.map((p) => p.category)).size;
+    const categories = new Set(
+      products.map(p => p.category?.id),
+    ).size;
     const stockValue = products.reduce(
       (sum, p) => sum + Number(p.purchasePrice) * p.stock,
       0,
@@ -153,6 +149,7 @@ export class ProductsService {
   async findOne(id: number, shopId: number) {
     const product = await this.productRepo.findOne({
       where: { id, shop: { id: shopId } },
+      relations: ['category'],
     });
     if (!product) throw new NotFoundException('Product not found');
     return product;
@@ -171,7 +168,14 @@ export class ProductsService {
       product.imageFileId = imageData.fileId;
     }
 
-    Object.assign(product, dto);
+    if (dto.categoryId !== undefined) {
+      product.category = dto.categoryId
+        ? ({ id: dto.categoryId } as any)
+        : null;
+    }
+
+    const { categoryId, ...rest } = dto as any;
+    Object.assign(product, rest);
     return this.productRepo.save(product);
   }
 
