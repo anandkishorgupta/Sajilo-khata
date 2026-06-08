@@ -2,7 +2,7 @@ import { Check, Gift, Shield } from "lucide-react"
 
 const features = [
   "Unlimited products during trial",
-  "QR billing with eSewa & Khalti",
+  // "QR billing with eSewa & Khalti",
   "Digital khata management",
   "Daily sales analytics",
   "Works on mobile and desktop",
