@@ -4,10 +4,10 @@ export type Product = {
   id: number;
   name: string;
   barcode: string;
-  category: {
+  category?: {
     id: number;
     name: string;
-  };
+  } | null;
   purchasePrice: number;
   sellingPrice: number;
   stock: number;
@@ -26,13 +26,20 @@ export type InventoryStats = {
 
 export const getProducts = (params?: {
   search?: string;
-  categoryId?: number;
+  categoryId?: number | "";
   stockFilter?: string;
   sortBy?: string;
   sortOrder?: "ASC" | "DESC";
   page?: number;
   limit?: number;
-}) => api.get("/products", { params });
+}) => {
+  const { categoryId, ...rest } = params ?? {};
+  const apiParams = {
+    ...rest,
+    ...(categoryId ? { category: String(categoryId) } : {}),
+  };
+  return api.get("/products", { params: apiParams });
+};
 
 export const getInventoryStats = () =>
   api.get<InventoryStats>("/products/stats");

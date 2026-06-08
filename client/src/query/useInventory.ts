@@ -17,7 +17,7 @@ export function useInventoryStats() {
 
 export function useProducts(filters: {
   search?: string;
-  category?: string;
+  categoryId?: number | "";
   stockFilter?: string;
   sortBy?: string;
   sortOrder?: "ASC" | "DESC";

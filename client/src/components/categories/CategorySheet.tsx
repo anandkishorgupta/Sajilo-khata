@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import type { Category } from "@/api/categories"
 import { createCategory, updateCategory } from "@/api/categories"
+import { useQueryClient } from "@tanstack/react-query"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,7 @@ type Props = {
 }
 
 export function CategorySheet({ open, onOpenChange, category, onSaved }: Props) {
+  const queryClient = useQueryClient()
   const isEdit = !!category
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ name: "", description: "" })
@@ -54,6 +56,8 @@ export function CategorySheet({ open, onOpenChange, category, onSaved }: Props) 
         await createCategory(payload)
         toast.success("Category created")
       }
+      queryClient.invalidateQueries({ queryKey: ["categories"] })
+      queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
       onSaved()
       onOpenChange(false)
     } catch (err: any) {

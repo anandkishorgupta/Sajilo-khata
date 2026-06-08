@@ -15,14 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useDebounce } from "@/hooks/useDebounce"
+import { useCategories } from "@/query/useCategories"
 import { useInventoryStats, useProducts } from "@/query/useInventory"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Pencil, Plus, Search, Trash2 } from "lucide-react"
 import { useState } from "react"
 import toast from "react-hot-toast"
 import { FaSortAlphaDown, FaSortAlphaUp } from "react-icons/fa"
-import { useQuery } from "@tanstack/react-query"
-import { getCategories } from "@/api/categories"
 import {
   Pagination,
   PaginationContent,
@@ -36,7 +35,6 @@ export default function InventoryPage() {
   const [page, setPage] = useState(1)
   const limit = 10
   const [search, setSearch] = useState("")
-  const [category, setCategory] = useState("")
   const [stockFilter, setStockFilter] = useState("")
   const [sortBy, setSortBy] = useState("createdAt")
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC")
@@ -60,8 +58,6 @@ export default function InventoryPage() {
 
   const products = data?.products ?? []
   const meta = data?.meta
-  console.log("RAW DATA:", data)
-  console.log("PRODUCTS:", products)
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
@@ -69,9 +65,8 @@ export default function InventoryPage() {
       queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
       toast.success("Product deleted!")
     },
-    onError: (error) => {
-      const message = "Failed to delete product"
-      toast.error(message)
+    onError: () => {
+      toast.error("Failed to delete product")
     },
   })
 
@@ -88,17 +83,13 @@ export default function InventoryPage() {
   // Add this function inside InventoryPage
   const resetFilters = () => {
     setSearch("")
-    setCategory("")
+    setCategoryId("")
     setStockFilter("")
     setSortBy("createdAt")
     setSortOrder("DESC")
     setPage(1)
   }
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-    select: (res) => res?.data?.data ?? [],
-  })
+  const { data: categories = [] } = useCategories()
   return (
     <div className="flex flex-col gap-1 p-6">
       {/* Header */}
@@ -136,7 +127,7 @@ export default function InventoryPage() {
           : [
               { l: "Total products", v: stats?.total ?? 0, tone: null },
               { l: "Low stock", v: stats?.lowStock ?? 0, tone: "danger" },
-              { l: "Categories", v: stats?.categories ?? 0, tone: null },
+              { l: "Categories", v: categories.length, tone: null },
             ].map((s) => (
               <Card key={s.l}>
                 <CardContent className="p-5">
@@ -186,13 +177,14 @@ export default function InventoryPage() {
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
               value={categoryId}
               onChange={(e) => {
-                setCategoryId(Number(e.target.value))
+                const value = e.target.value
+                setCategoryId(value === "" ? "" : Number(value))
                 setPage(1)
               }}
             >
               <option value="">All categories</option>
 
-              {categories.map((c: any) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -278,7 +270,7 @@ export default function InventoryPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    products.map((p) => {
+                    products.map((p: Product) => {
                       const low = p.stock <= p.lowStockLimit
 
                       return (
@@ -314,7 +306,7 @@ export default function InventoryPage() {
                             </div>
                           </TableCell>
 
-                          <TableCell className="font-mono">{p.sku}</TableCell>
+                          <TableCell className="font-mono">{p.barcode}</TableCell>
 
                           <TableCell>
                             <Badge variant="outline">{p?.category?.name}</Badge>

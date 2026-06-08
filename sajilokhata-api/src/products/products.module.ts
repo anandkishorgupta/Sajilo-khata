@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CategoriesModule } from '../categories/categories.module';
 import { Shop } from '../shops/entities';
 import { Product } from './entities';
 import { ProductsController } from './products.controller';
@@ -13,7 +14,7 @@ import { SaleItem } from '../sales/entities';
 @Module({
   imports: [MulterModule.register({
     storage: memoryStorage(),
-  }), ImagekitModule, TypeOrmModule.forFeature([Product, Shop,PurchaseItem,SaleItem])],
+  }), ImagekitModule, CategoriesModule, TypeOrmModule.forFeature([Product, Shop,PurchaseItem,SaleItem])],
   providers: [ProductsService],
   controllers: [ProductsController]
 })

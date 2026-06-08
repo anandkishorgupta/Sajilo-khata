@@ -1,5 +1,6 @@
-import { getCategories } from "@/api/categories"
+import type { Category } from "@/api/categories"
 import { createProduct, updateProduct } from "@/api/inventory"
+import { useCategories } from "@/query/useCategories"
 import { Button } from "@/components/ui/button"
 import {
   Command,
@@ -24,7 +25,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Check, ChevronsUpDown, Package } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useDropzone } from "react-dropzone"
@@ -71,11 +72,7 @@ export default function AddProductSheet({
   const [categoryOpen, setCategoryOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-    select: (res) => res?.data?.data ?? [],
-  })
+  const { data: categories = [] } = useCategories()
 
   // Cleanup preview URL on unmount or when preview changes
   useEffect(() => {
@@ -181,7 +178,7 @@ export default function AddProductSheet({
   }
 
   const selectedCategoryName = categoryId
-    ? (categories as any[]).find((c) => c.id === categoryId)?.name
+    ? categories.find((c: Category) => c.id === categoryId)?.name
     : null
 
   async function onSubmit(data: FormValues) {
@@ -331,7 +328,7 @@ export default function AddProductSheet({
                       <CommandList>
                         <CommandEmpty>No category found.</CommandEmpty>
                         <CommandGroup>
-                          {(categories as any[]).map((c) => (
+                          {categories.map((c: Category) => (
                             <CommandItem
                               key={c.id}
                               value={c.name}

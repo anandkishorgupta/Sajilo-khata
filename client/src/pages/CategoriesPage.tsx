@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react"
 import type { Category } from "@/api/categories"
-import { getCategories, deleteCategory } from "@/api/categories"
+import { deleteCategory } from "@/api/categories"
+import { CategorySheet } from "@/components/categories/CategorySheet"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -12,52 +13,49 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
-import { CategorySheet } from "@/components/categories/CategorySheet"
+import { useCategories } from "@/query/useCategories"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { FolderOpen, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { useState } from "react"
 import toast from "react-hot-toast"
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const { data: categories = [], isLoading: loading } = useCategories()
   const [search, setSearch] = useState("")
 
   const [addOpen, setAddOpen] = useState(false)
   const [editCategory, setEditCategory] = useState<Category | null>(null)
   const [editOpen, setEditOpen] = useState(false)
 
-  const loadCategories = async () => {
-    setLoading(true)
-    try {
-      const res = await getCategories()
-      setCategories(res.data?.data ?? res.data ?? [])
-    } catch {
-      toast.error("Failed to load categories")
-    } finally {
-      setLoading(false)
-    }
+  const invalidateCategories = () => {
+    queryClient.invalidateQueries({ queryKey: ["categories"] })
+    queryClient.invalidateQueries({ queryKey: ["inventory-stats"] })
   }
 
-  useEffect(() => {
-    loadCategories()
-  }, [])
+  const deleteMutation = useMutation({
+    mutationFn: deleteCategory,
+    onSuccess: () => {
+      toast.success("Category deleted")
+      invalidateCategories()
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+    },
+    onError: () => {
+      toast.error("Failed to delete category")
+    },
+  })
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     const ok = window.confirm("Delete this category? This cannot be undone.")
     if (!ok) return
-    try {
-      await deleteCategory(id)
-      toast.success("Category deleted")
-      loadCategories()
-    } catch {
-      toast.error("Failed to delete category")
-    }
+    deleteMutation.mutate(id)
   }
 
   const filtered = categories.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description && c.description.toLowerCase().includes(search.toLowerCase()))
+      (c.description &&
+        c.description.toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
@@ -160,6 +158,7 @@ export default function CategoriesPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(c.id)}
+                          disabled={deleteMutation.isPending}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
@@ -177,14 +176,14 @@ export default function CategoriesPage() {
       <CategorySheet
         open={addOpen}
         onOpenChange={setAddOpen}
-        onSaved={loadCategories}
+        onSaved={invalidateCategories}
       />
 
       <CategorySheet
         open={editOpen}
         onOpenChange={setEditOpen}
         category={editCategory}
-        onSaved={loadCategories}
+        onSaved={invalidateCategories}
       />
     </div>
   )

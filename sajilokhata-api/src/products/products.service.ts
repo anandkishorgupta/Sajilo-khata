@@ -1,7 +1,8 @@
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CategoriesService } from '../categories/categories.service';
 import { ImageKitService } from '../imagekit/imagekit.service';
 import { Shop } from '../shops/entities';
 import { CreateProductDto, UpdateProductDto } from './dto';
@@ -15,9 +16,20 @@ export class ProductsService {
     @InjectRepository(Shop)
     private shopRepo: Repository<Shop>,
     private imageKitService: ImageKitService,
+    private categoriesService: CategoriesService,
   ) { }
 
+  private async validateCategoryId(categoryId: number | undefined, shopId: number) {
+    if (!categoryId) return;
+    try {
+      await this.categoriesService.findOne(categoryId, shopId);
+    } catch {
+      throw new BadRequestException('Invalid category for this shop');
+    }
+  }
+
   async create(dto: CreateProductDto, shopId: number, file?: Express.Multer.File) {
+    await this.validateCategoryId(dto.categoryId, shopId);
     let imageData: { url?: string; fileId?: string } = {};
     if (file) {
       imageData = await this.imageKitService.upload(file);
@@ -156,8 +168,11 @@ export class ProductsService {
   }
 
   async update(id: number, dto: UpdateProductDto, shopId: number, file?: Express.Multer.File) {
-    console.log('Updating product with id:', id, 'and data:', dto, 'and file:', file);
     const product = await this.findOne(id, shopId);
+
+    if (dto.categoryId !== undefined) {
+      await this.validateCategoryId(dto.categoryId, shopId);
+    }
 
     if (file) {
       if (product.imageFileId) {
@@ -190,6 +205,7 @@ export class ProductsService {
   async lowStock(shopId: number) {
     return this.productRepo
       .createQueryBuilder('product')
+      .leftJoinAndSelect('product.category', 'category')
       .where('product.shop_id = :shopId', { shopId })
       .andWhere('product.stock <= product.lowStockLimit')
       .getMany();
