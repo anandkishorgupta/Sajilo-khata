@@ -2,12 +2,13 @@ import { createBrowserRouter } from "react-router-dom"
 
 import AppLayout from "@/layout/AppLayout"
 import DashboardLayout from "@/layout/DashboardLayout"
-import KhataPage from "@/pages/KhataPage"
-import ExpensePage from "@/pages/ExpensePage"
+import AiAssistantPage from "@/pages/AiAssistantPage"
 import LoginPage from "@/pages/auth/Loginpage"
 import RegisterPage from "@/pages/auth/RegisterPage"
 import DashboardPage from "@/pages/dashboard/DashboardPage"
+import ExpensePage from "@/pages/ExpensePage"
 import HomePage from "@/pages/HomePage"
+import KhataPage from "@/pages/KhataPage"
 
 import BillingPage from "@/pages/BillingPage"
 import InventoryPage from "@/pages/InventoryPage"
@@ -62,7 +63,7 @@ export const router = createBrowserRouter([
       { path: "/dashboard/categories", element: <CategoriesPage /> },
       { path: "/dashboard/khata", element: <KhataPage /> },
       { path: "/dashboard/expenses", element: <ExpensePage /> },
-
+      { path: "/dashboard/ai-assistant", element: <AiAssistantPage /> },
     ],
   },
 ])

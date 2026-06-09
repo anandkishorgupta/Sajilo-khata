@@ -20,6 +20,7 @@ import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { CategoriesModule } from './categories/categories.module';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { CategoriesModule } from './categories/categories.module';
     DashboardModule,
     InvoicesModule,
     CategoriesModule,
+    AiAssistantModule
   ],
   controllers: [AppController],
   providers: [AppService],

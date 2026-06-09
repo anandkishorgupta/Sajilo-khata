@@ -22,5 +22,7 @@ import { ExpensesService } from "./expenses.service";
   ],
 
   providers: [ExpensesService],
+  exports: [ExpensesService],
+
 })
 export class ExpensesModule {}

@@ -10,20 +10,21 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { DollarSign } from "lucide-react";
 import {
   BarChart3,
+  BookOpen,
+  Bot,
   Crown,
+  DollarSign,
   LayoutDashboard,
   Package,
   Receipt,
   Settings,
+  Sparkles,
   Store,
   Tags,
   Users,
 } from "lucide-react"
-import { BookOpen } from "lucide-react"
-import { Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
 const items = [
   {
@@ -41,7 +42,7 @@ const items = [
     icon: Tags,
     url: "/dashboard/categories",
   },
-   {
+  {
     title: "Expense",
     icon: DollarSign,
     url: "/dashboard/expenses",
@@ -56,7 +57,7 @@ const items = [
     icon: Users,
     url: "/dashboard/customers",
   },
-    {
+  {
     title: "Khata",
     icon: BookOpen,
     url: "/dashboard/khata",
@@ -65,6 +66,11 @@ const items = [
     title: "Analytics",
     icon: BarChart3,
     url: "/dashboard/analytics",
+  },
+  {
+    title: "AI Assistant",
+    icon: Bot,
+    url: "/dashboard/ai-assistant",
   },
   {
     title: "Settings",

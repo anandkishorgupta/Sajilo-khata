@@ -54,7 +54,6 @@ export class ExpensesService {
                 note: dto.note,
                 date: dto.date ?? new Date().toISOString().split("T")[0],
             });
-        console.log(expense)
         return this.expenseRepo.save(expense);
     }
 
