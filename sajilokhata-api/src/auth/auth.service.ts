@@ -110,4 +110,76 @@ export class AuthService {
             },
         }
     }
+//     async login(dto: LoginDto) {
+//     const user = await this.userRepo.findOne({
+//         where: { email: dto.email },
+//         relations: ['shop'],
+//     });
+
+//     if (!user) {
+//         throw new Error('Invalid credentials');
+//     }
+
+//     const isMatch = await bcrypt.compare(
+//         dto.password,
+//         user.password,
+//     );
+
+//     if (!isMatch) {
+//         throw new Error('Invalid credentials');
+//     }
+
+//     const shop = user.shop;
+
+//     // =====================================
+//     // CHECK SUBSCRIPTION EXPIRY
+//     // =====================================
+
+//     // Trial account
+//     if (
+//         shop.status === 'trial' &&
+//         shop.trialEndsAt &&
+//         new Date(shop.trialEndsAt) < new Date()
+//     ) {
+//         throw new Error(
+//             'Your trial period has expired. Please renew your membership.',
+//         );
+//     }
+
+//     // Paid account
+//     if (
+//         shop.status === 'active' &&
+//         shop.subscriptionEnd &&
+//         new Date(shop.subscriptionEnd) < new Date()
+//     ) {
+//         throw new Error(
+//             'Your membership has expired. Please renew your subscription.',
+//         );
+//     }
+
+//     // Explicitly expired
+//     if (shop.status === 'expired') {
+//         throw new Error(
+//             'Your membership has expired. Please contact support.',
+//         );
+//     }
+
+//     const accessToken = this.generateToken(user);
+
+//     return {
+//         access_token: accessToken,
+//         user: {
+//             id: user.id,
+//             email: user.email,
+//             name: user.name,
+//         },
+//         shop: {
+//             id: shop.id,
+//             name: shop.name,
+//             status: shop.status,
+//             plan: shop.plan,
+//             trialEndsAt: shop.trialEndsAt,
+//         },
+//     };
+// }
 }

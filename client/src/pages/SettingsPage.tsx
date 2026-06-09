@@ -1,38 +1,38 @@
-import { useState, useEffect } from "react"
 import type { UserProfile } from "@/api/settings"
 import {
+  changePassword,
   getProfile,
   updateProfile,
-  changePassword,
   updateShop,
 } from "@/api/settings"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  User,
-  Store,
+  Calendar,
+  Crown,
+  Loader2,
   Lock,
   Mail,
-  Phone,
   MapPin,
-  Calendar,
-  Shield,
-  Crown,
+  Phone,
   Save,
-  Loader2,
+  Shield,
+  Store,
+  User,
 } from "lucide-react"
+import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 
 export default function SettingsPage() {
@@ -145,7 +145,11 @@ export default function SettingsPage() {
   function getPlanBadge(plan: string) {
     switch (plan) {
       case "pro":
-        return <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0">Pro</Badge>
+        return (
+          <Badge className="border-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+            Pro
+          </Badge>
+        )
       case "basic":
         return <Badge variant="secondary">Basic</Badge>
       default:
@@ -156,11 +160,19 @@ export default function SettingsPage() {
   function getStatusBadge(status: string) {
     switch (status) {
       case "active":
-        return <Badge className="bg-green-500/10 text-green-600 border-green-500/30">Active</Badge>
+        return (
+          <Badge className="border-green-500/30 bg-green-500/10 text-green-600">
+            Active
+          </Badge>
+        )
       case "expired":
         return <Badge variant="destructive">Expired</Badge>
       default:
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/30">Trial</Badge>
+        return (
+          <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-600">
+            Trial
+          </Badge>
+        )
     }
   }
 
@@ -240,7 +252,11 @@ export default function SettingsPage() {
                       placeholder="you@example.com"
                     />
                   </div>
-                  <Button type="submit" disabled={savingProfile} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="w-full"
+                  >
                     {savingProfile ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -336,7 +352,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="shopName">Shop Name</Label>
                   <div className="relative">
-                    <Store className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Store className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="shopName"
                       value={shopName}
@@ -350,7 +366,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="shopAddress">Address</Label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <MapPin className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="shopAddress"
                       value={shopAddress}
@@ -364,7 +380,7 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="shopPhone">Phone Number</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Phone className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="shopPhone"
                       value={shopPhone}

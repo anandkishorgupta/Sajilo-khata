@@ -4,12 +4,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
 import { CustomersModule } from './customers/customers.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { ImagekitModule } from './imagekit/imagekit.module';
+import { InvoicesModule } from './invoices/invoices.module';
 import { KhataTransactionsModule } from './khata-transactions/khata-transactions.module';
 import { ProductsModule } from './products/products.module';
 import { PurchasesModule } from './purchases/purchases.module';
@@ -17,10 +21,6 @@ import { SalesModule } from './sales/sales.module';
 import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
-import { DashboardModule } from './dashboard/dashboard.module';
-import { InvoicesModule } from './invoices/invoices.module';
-import { CategoriesModule } from './categories/categories.module';
-import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [

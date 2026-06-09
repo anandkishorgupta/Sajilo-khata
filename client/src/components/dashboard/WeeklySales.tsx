@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -8,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useEffect, useState } from "react"
 import {
   Bar,
   BarChart,
@@ -38,7 +38,7 @@ export default function WeeklySales() {
           <CardTitle className="text-base">This Week's Sales</CardTitle>
           <CardDescription>NPR per day</CardDescription>
         </div>
-        <Badge variant="outline">7-day view</Badge>
+        <Badge variant="outline">30-day view</Badge>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -70,7 +70,10 @@ export default function WeeklySales() {
                     border: "1px solid var(--color-border)",
                     background: "var(--color-card)",
                   }}
-                  formatter={(v: number) => [`Rs ${v.toLocaleString()}`, "Sales"]}
+                  formatter={(v: number) => [
+                    `Rs ${v.toLocaleString()}`,
+                    "Sales",
+                  ]}
                 />
                 <Bar
                   dataKey="amount"

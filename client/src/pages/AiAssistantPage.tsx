@@ -1,27 +1,21 @@
-import { useState, useRef, useEffect } from "react"
-import Markdown from "react-markdown"
-import type {
-  ChatMessage,
-  PendingAction,
-} from "@/api/ai-assistant"
-import {
-  sendChatMessage,
-  confirmAction,
-} from "@/api/ai-assistant"
+import type { ChatMessage, PendingAction } from "@/api/ai-assistant"
+import { confirmAction, sendChatMessage } from "@/api/ai-assistant"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-  Bot,
-  Send,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Sparkles,
-  MessageSquare,
   BarChart3,
+  Bot,
+  CheckCircle2,
+  Loader2,
+  MessageSquare,
+  Send,
   ShoppingCart,
+  Sparkles,
+  XCircle,
 } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import toast from "react-hot-toast"
+import Markdown from "react-markdown"
 
 const SUGGESTIONS = [
   {
@@ -112,8 +106,8 @@ export default function AiAssistantPage() {
 
     setMessages((prev) =>
       prev.map((m, i) =>
-        i === messageIndex ? { ...m, actionStatus: "confirmed" as const } : m,
-      ),
+        i === messageIndex ? { ...m, actionStatus: "confirmed" as const } : m
+      )
     )
 
     try {
@@ -131,8 +125,8 @@ export default function AiAssistantPage() {
       toast.error("Failed to execute action")
       setMessages((prev) =>
         prev.map((m, i) =>
-          i === messageIndex ? { ...m, actionStatus: "pending" as const } : m,
-        ),
+          i === messageIndex ? { ...m, actionStatus: "pending" as const } : m
+        )
       )
     }
   }
@@ -140,8 +134,8 @@ export default function AiAssistantPage() {
   const handleCancelAction = (messageIndex: number) => {
     setMessages((prev) =>
       prev.map((m, i) =>
-        i === messageIndex ? { ...m, actionStatus: "cancelled" as const } : m,
-      ),
+        i === messageIndex ? { ...m, actionStatus: "cancelled" as const } : m
+      )
     )
     setMessages((prev) => [
       ...prev,
@@ -163,18 +157,28 @@ export default function AiAssistantPage() {
     const data = action.data as Record<string, any>
     switch (action.type) {
       case "CREATE_SALE": {
-        const items = data.items as { productId: number; quantity: number; unitPrice: number }[]
+        const items = data.items as {
+          productId: number
+          quantity: number
+          unitPrice: number
+        }[]
         const total = items.reduce(
-          (sum: number, i: { quantity: number; unitPrice: number }) => sum + i.quantity * i.unitPrice,
-          0,
+          (sum: number, i: { quantity: number; unitPrice: number }) =>
+            sum + i.quantity * i.unitPrice,
+          0
         )
         return `Sale: ${items.length} item(s) — Total: Rs ${total}`
       }
       case "CREATE_PURCHASE": {
-        const items = data.items as { productId: number; quantity: number; unitPrice: number }[]
+        const items = data.items as {
+          productId: number
+          quantity: number
+          unitPrice: number
+        }[]
         const total = items.reduce(
-          (sum: number, i: { quantity: number; unitPrice: number }) => sum + i.quantity * i.unitPrice,
-          0,
+          (sum: number, i: { quantity: number; unitPrice: number }) =>
+            sum + i.quantity * i.unitPrice,
+          0
         )
         return `Purchase: ${items.length} item(s) — Total: Rs ${total}`
       }
@@ -193,7 +197,7 @@ export default function AiAssistantPage() {
           <Bot className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold">AI Assistant</h1>
+          <h1 className="text-xl font-semibold">Sajilo AI</h1>
           <p className="text-sm text-muted-foreground">
             Ask questions, get insights, or record transactions
           </p>
@@ -255,45 +259,46 @@ export default function AiAssistantPage() {
                           </span>
                         </div>
                       )}
-                      <div className="text-sm prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2">
+                      <div className="prose prose-sm dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 max-w-none text-sm">
                         {msg.role === "assistant" ? (
                           <Markdown>{msg.content}</Markdown>
                         ) : (
-                          <span className="whitespace-pre-wrap">{msg.content}</span>
+                          <span className="whitespace-pre-wrap">
+                            {msg.content}
+                          </span>
                         )}
                       </div>
 
                       {/* Action confirmation UI */}
-                      {msg.pendingAction &&
-                        msg.actionStatus === "pending" && (
-                          <div className="mt-3 rounded-xl border bg-background p-3">
-                            <p className="mb-2 text-xs font-medium text-muted-foreground">
-                              Pending Action
-                            </p>
-                            <p className="mb-3 text-sm font-medium">
-                              {formatActionSummary(msg.pendingAction)}
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleConfirmAction(i)}
-                                className="gap-1.5"
-                              >
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Confirm
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCancelAction(i)}
-                                className="gap-1.5"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                                Cancel
-                              </Button>
-                            </div>
+                      {msg.pendingAction && msg.actionStatus === "pending" && (
+                        <div className="mt-3 rounded-xl border bg-background p-3">
+                          <p className="mb-2 text-xs font-medium text-muted-foreground">
+                            Pending Action
+                          </p>
+                          <p className="mb-3 text-sm font-medium">
+                            {formatActionSummary(msg.pendingAction)}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleConfirmAction(i)}
+                              className="gap-1.5"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Confirm
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCancelAction(i)}
+                              className="gap-1.5"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              Cancel
+                            </Button>
                           </div>
-                        )}
+                        </div>
+                      )}
 
                       {msg.actionStatus === "confirmed" && (
                         <div className="mt-2 flex items-center gap-1.5 text-xs text-green-600">

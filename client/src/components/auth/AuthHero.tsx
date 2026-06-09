@@ -13,7 +13,7 @@ export function AuthHero() {
     <section className="hidden lg:block">
       <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1 text-sm font-medium text-emerald-600">
         <Gift className="h-4 w-4" />
-        7-day free trial
+        30-day free trial
       </div>
 
       <h1 className="mt-6 text-5xl leading-tight font-bold tracking-tight">

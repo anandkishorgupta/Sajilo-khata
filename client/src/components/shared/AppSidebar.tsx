@@ -80,6 +80,7 @@ const items = [
 ]
 
 export function AppSidebar() {
+
   const shop = JSON.parse(localStorage.getItem("shop") || "null")
 
   const getInitials = (name?: string) => {

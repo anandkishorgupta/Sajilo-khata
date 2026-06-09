@@ -15,7 +15,7 @@ import { Sale } from '../../sales/entities';
 import { StockMovement } from '../../stock-movements/entities';
 import { User } from '../../users/entities';
 
-export type PlanType = 'trial' | 'basic' | 'pro';
+export type PlanType = 'trial' | 'pro';
 export type ShopStatus = 'trial' | 'active' | 'expired';
 
 @Entity('shops')

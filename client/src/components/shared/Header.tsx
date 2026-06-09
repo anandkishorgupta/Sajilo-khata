@@ -1,6 +1,10 @@
 import { ArrowRight, Store } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 export function Header() {
+  const location = useLocation()
+  const hideNav =
+    location.pathname === "/login" || location.pathname === "/register"
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
@@ -12,7 +16,7 @@ export function Header() {
           <span className="text-lg font-bold tracking-tight">Sajilo Khata</span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        {/* <nav className="hidden items-center gap-6 md:flex">
           <a
             href="#features"
             className="text-sm text-muted-foreground hover:text-foreground"
@@ -33,8 +37,31 @@ export function Header() {
           >
             Customers
           </a>
-        </nav>
+        </nav> */}
+        {!hideNav && (
+          <nav className="hidden items-center gap-6 md:flex">
+            <a
+              href="#features"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Features
+            </a>
 
+            <a
+              href="#pricing"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Pricing
+            </a>
+
+            <a
+              href="#testimonials"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Customers
+            </a>
+          </nav>
+        )}
         <div className="flex items-center gap-2">
           <Link
             to="/login"

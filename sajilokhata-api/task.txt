@@ -35,3 +35,6 @@ TODO later
 ++==> filter by category dynamic making remaining , for this from frontrnf i have to add functionality of CRUD categories
 
 remove user sale link
+
+remaining works ........ check subscription and logout if subscription expired
+==> for subscription buy integrate khalti

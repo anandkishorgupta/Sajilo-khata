@@ -1,7 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import toast from "react-hot-toast"
-import { Link } from "react-router-dom"
 import {
   ArrowRight,
   Loader2,
@@ -12,6 +9,9 @@ import {
   Store,
   User,
 } from "lucide-react"
+import { useForm } from "react-hook-form"
+import toast from "react-hot-toast"
+import { Link } from "react-router-dom"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -78,7 +78,7 @@ export function RegisterForm() {
           </h2>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Start your 7-day free trial.
+            Start your 30-day free trial.
           </p>
         </div>
 
