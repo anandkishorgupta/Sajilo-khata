@@ -7,9 +7,8 @@ import {
     OneToOne,
     PrimaryGeneratedColumn
 } from 'typeorm';
-import { Shop } from '../../shops/entities';
 import { Sale } from '../../sales/entities';
-import { Expense } from '../../expenses/entities';
+import { Shop } from '../../shops/entities';
 
 @Entity('users')
 export class User {
@@ -26,9 +25,6 @@ export class User {
 
     @OneToMany(() => Sale, (sale) => sale.user)
     sales: Sale[];
-
-    @OneToMany(() => Expense, (expense) => expense.user)
-    expenses: Expense[];
 
     @Column()
     name: string;

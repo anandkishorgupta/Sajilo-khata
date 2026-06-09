@@ -2,7 +2,8 @@ import { createBrowserRouter } from "react-router-dom"
 
 import AppLayout from "@/layout/AppLayout"
 import DashboardLayout from "@/layout/DashboardLayout"
-
+import KhataPage from "@/pages/KhataPage"
+import ExpensePage from "@/pages/ExpensePage"
 import LoginPage from "@/pages/auth/Loginpage"
 import RegisterPage from "@/pages/auth/RegisterPage"
 import DashboardPage from "@/pages/dashboard/DashboardPage"
@@ -59,6 +60,9 @@ export const router = createBrowserRouter([
       { path: "/dashboard/analytics", element: <AnalyticsPage /> },
       { path: "/dashboard/settings", element: <SettingsPage /> },
       { path: "/dashboard/categories", element: <CategoriesPage /> },
+      { path: "/dashboard/khata", element: <KhataPage /> },
+      { path: "/dashboard/expenses", element: <ExpensePage /> },
+
     ],
   },
 ])

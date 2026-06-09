@@ -8,7 +8,6 @@ import {
 } from "typeorm";
 
 import { Shop } from "../../shops/entities/shop.entity";
-import { User } from "../../users/entities/user.entity";
 
 @Entity("expenses")
 export class Expense {
@@ -20,13 +19,6 @@ export class Expense {
     })
     @JoinColumn({ name: "shop_id" })
     shop: Shop;
-
-    @ManyToOne(() => User, (user) => user.expenses, {
-        nullable: true,
-        onDelete: "SET NULL",
-    })
-    @JoinColumn({ name: "user_id" })
-    user: User;
 
     @Column()
     title: string;
@@ -48,6 +40,12 @@ export class Expense {
         nullable: true,
     })
     note: string;
+
+    @Column({
+        type: "date",
+        nullable: true,
+    })
+    date: string;
 
     @CreateDateColumn({
         name: "created_at",

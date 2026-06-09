@@ -22,7 +22,7 @@ import { CreateExpenseDto } from "./dto";
 export class ExpensesController {
   constructor(
     private readonly expensesService: ExpensesService,
-  ) {}
+  ) { }
 
   // =====================================
   // CREATE
@@ -38,7 +38,6 @@ export class ExpensesController {
     return this.expensesService.create(
       dto,
       user.shopId,
-      user.id,
     );
   }
 

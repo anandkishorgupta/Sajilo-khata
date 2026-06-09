@@ -29,8 +29,8 @@ export class ExpensesService {
     async create(
         dto: CreateExpenseDto,
         shopId: number,
-        userId: number,
     ) {
+
         const shop = await this.shopRepo.findOne({
             where: {
                 id: shopId,
@@ -48,17 +48,13 @@ export class ExpensesService {
                 shop: {
                     id: shopId,
                 } as Shop,
-
-                user: {
-                    id: userId,
-                } as User,
-
                 title: dto.title,
                 amount: dto.amount,
                 category: dto.category,
                 note: dto.note,
+                date: dto.date ?? new Date().toISOString().split("T")[0],
             });
-
+        console.log(expense)
         return this.expenseRepo.save(expense);
     }
 
@@ -73,10 +69,7 @@ export class ExpensesService {
                 },
             },
 
-            relations: {
-                user: true,
-            },
-
+           
             order: {
                 createdAt: "DESC",
             },
@@ -100,9 +93,7 @@ export class ExpensesService {
                     },
                 },
 
-                relations: {
-                    user: true,
-                },
+               
             });
 
         if (!expense) {

@@ -1,9 +1,9 @@
 import { Type } from "class-transformer";
-
 import {
     IsNumber,
     IsOptional,
     IsString,
+    IsDateString,
 } from "class-validator";
 
 export class CreateExpenseDto {
@@ -21,4 +21,8 @@ export class CreateExpenseDto {
     @IsOptional()
     @IsString()
     note?: string;
+
+    // 👇 NEW FIELD
+    @IsDateString()
+    date: string; // format: "2026-06-09"
 }
