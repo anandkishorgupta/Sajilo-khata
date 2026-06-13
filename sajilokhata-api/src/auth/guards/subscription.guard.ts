@@ -4,56 +4,40 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Shop } from '../../shops/entities';
 
 @Injectable()
 export class SubscriptionGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext,
-  ): boolean {
-    const request =
-      context.switchToHttp().getRequest();
+  constructor(
+    private reflector: Reflector,
+    @InjectRepository(Shop)
+    private shopRepo: Repository<Shop>,
+  ) {}
 
-    const user = request.user;
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
 
-    // Public routes
-    if (!user) {
-      return true;
+    const user = context.switchToHttp().getRequest().user;
+    if (!user || !user.shopId) return false;
+
+    const shop = await this.shopRepo.findOne({ where: { id: user.shopId } });
+    if (!shop) return false;
+
+    if (shop.status === 'active') return true;
+
+    if (shop.trialEndsAt < new Date()) {
+      shop.status = 'expired';
+      await this.shopRepo.save(shop);
+      throw new ForbiddenException('TRIAL_EXPIRED');
     }
 
-    const shop = user.shop;
-
-    if (!shop) {
-      return true;
-    }
-
-    const now = new Date();
-
-    if (
-      shop.status === 'trial' &&
-      shop.trialEndsAt &&
-      new Date(shop.trialEndsAt) < now
-    ) {
-      throw new ForbiddenException(
-        'Your trial has expired. Please upgrade your membership.',
-      );
-    }
-
-    if (
-      shop.status === 'active' &&
-      shop.subscriptionEnd &&
-      new Date(shop.subscriptionEnd) < now
-    ) {
-      throw new ForbiddenException(
-        'Your membership has expired. Please renew your subscription.',
-      );
-    }
-
-    if (shop.status === 'expired') {
-      throw new ForbiddenException(
-        'Your membership has expired.',
-      );
-    }
-
-    return true;
+    return true; // status is 'trial' and trialEndsAt is in the future
   }
 }

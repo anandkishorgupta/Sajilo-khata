@@ -3,24 +3,22 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Res,
-  UseGuards,
+  Res
 } from "@nestjs/common";
 
 import type { Response } from "express";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
 import { InvoicesService } from "./invoices.service";
 
 @Controller("invoices")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
-  ) {}
+  ) { }
 
   // =====================================
   // FULL PDF INVOICE

@@ -1,7 +1,6 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { ProductsService } from './products.service';
 
@@ -14,7 +13,7 @@ export class ProductsController {
 
     // CREATE PRODUCT
     @Post()
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('image'))
     create(
         @Body()
@@ -32,7 +31,7 @@ export class ProductsController {
 
     // GET ALL PRODUCTS with pagination, search, category filter, stock filter, sorting
     @Get()
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     findAll(
         @CurrentUser() user: any,
 
@@ -59,7 +58,7 @@ export class ProductsController {
 
     // get stats
     @Get("stats")
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     getStats(@CurrentUser() user: any) {
         return this.productService.getStats(user.shopId)
     }
@@ -67,7 +66,7 @@ export class ProductsController {
 
     // LOW STOCK PRODUCTS
     @Get('low-stock')
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     lowStock(
         @CurrentUser()
         user: any,
@@ -79,7 +78,7 @@ export class ProductsController {
 
     // GET SINGLE PRODUCT
     @Get(':id')
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     findOne(
         @Param('id', ParseIntPipe)
         id: number,
@@ -95,7 +94,7 @@ export class ProductsController {
 
     // UPDATE PRODUCT
     @Put(":id")
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor("image"))
     update(
         @Param("id", ParseIntPipe)
@@ -120,7 +119,7 @@ export class ProductsController {
 
     // DELETE PRODUCT
     @Delete(":id")
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     remove(
         @Param("id", ParseIntPipe)
         id: number,

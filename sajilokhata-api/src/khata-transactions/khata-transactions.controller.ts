@@ -4,11 +4,9 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Post,
-  UseGuards,
+  Post
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
@@ -17,11 +15,11 @@ import { KhataTransactionsService } from "./khata-transactions.service";
 import { CreatePaymentDto } from "./dto";
 
 @Controller("khata")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class KhataTransactionsController {
   constructor(
     private readonly khataService: KhataTransactionsService,
-  ) {}
+  ) { }
 
   // =====================================
   // CREATE PAYMENT

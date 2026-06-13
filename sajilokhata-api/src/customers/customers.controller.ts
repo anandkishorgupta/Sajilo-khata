@@ -7,8 +7,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
-  Query,
-  UseGuards,
+  Query
 } from "@nestjs/common";
 
 import { CustomersService } from "./customers.service";
@@ -18,7 +17,6 @@ import {
   UpdateCustomerDto,
 } from "./dto";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
@@ -26,11 +24,11 @@ import { CurrentUser } from "../auth/decorators/current-user.decorator";
 export class CustomersController {
   constructor(
     private readonly customersService: CustomersService,
-  ) {}
+  ) { }
 
   // CREATE CUSTOMER
   @Post()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   create(
     @Body()
     dto: CreateCustomerDto,
@@ -46,7 +44,7 @@ export class CustomersController {
 
   // GET ALL CUSTOMERS
   @Get()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   findAll(
     @CurrentUser()
     user: any,
@@ -62,7 +60,7 @@ export class CustomersController {
 
   // GET SINGLE CUSTOMER
   @Get(":id")
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   findOne(
     @Param("id", ParseIntPipe)
     id: number,
@@ -78,7 +76,7 @@ export class CustomersController {
 
   // UPDATE CUSTOMER
   @Put(":id")
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   update(
     @Param("id", ParseIntPipe)
     id: number,
@@ -98,7 +96,7 @@ export class CustomersController {
 
   // DELETE CUSTOMER
   @Delete(":id")
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   remove(
     @Param("id", ParseIntPipe)
     id: number,

@@ -10,13 +10,13 @@ import ExpensePage from "@/pages/ExpensePage"
 import HomePage from "@/pages/HomePage"
 import KhataPage from "@/pages/KhataPage"
 
-import BillingPage from "@/pages/BillingPage"
-import InventoryPage from "@/pages/InventoryPage"
-
 import AnalyticsPage from "@/pages/AnalyticsPage"
+import BillingPage from "@/pages/BillingPage"
 import CategoriesPage from "@/pages/CategoriesPage"
 import CustomersPage from "@/pages/CustomersPage"
+import InventoryPage from "@/pages/InventoryPage"
 import SettingsPage from "@/pages/SettingsPage"
+import TrialExpiredPage from "@/pages/TrialExpiredPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
 
@@ -42,6 +42,7 @@ export const router = createBrowserRouter([
           </PublicRoute>
         ),
       },
+      { path: "/trial-expired", element: <TrialExpiredPage /> },
     ],
   },
 

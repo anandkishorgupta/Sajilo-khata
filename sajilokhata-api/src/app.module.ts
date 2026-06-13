@@ -18,10 +18,13 @@ import { KhataTransactionsModule } from './khata-transactions/khata-transactions
 import { ProductsModule } from './products/products.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesModule } from './sales/sales.module';
+import { Shop } from './shops/entities';
 import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
-
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { SubscriptionGuard } from './auth/guards/subscription.guard';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -58,9 +61,14 @@ import { UsersModule } from './users/users.module';
     DashboardModule,
     InvoicesModule,
     CategoriesModule,
-    AiAssistantModule
+    AiAssistantModule,
+    TypeOrmModule.forFeature([Shop])
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService
+    ,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: SubscriptionGuard },
+  ],
 })
 export class AppModule { }

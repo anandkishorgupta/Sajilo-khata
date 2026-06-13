@@ -1,11 +1,14 @@
-// import axios from "axios"
+// import { logout } from "@/store/slices/authSlice";
+// import { store } from "@/store/store";
+// import axios from "axios";
 
 // export const api = axios.create({
-//     baseURL: "http://localhost:3000",
+//     baseURL: "http://localhost:3000", // change to your backend
 // })
 
+// // attach token automatically
 // api.interceptors.request.use((config) => {
-//     const token = localStorage.getItem("token")
+//     const token = store.getState().auth.token
 
 //     if (token) {
 //         config.headers.Authorization = `Bearer ${token}`
@@ -14,13 +17,27 @@
 //     return config
 // })
 
+// // global error handler
+// api.interceptors.response.use(
+//     (res) => res,
+//     (err) => {
+//         if (err.response?.status === 401) {
+//             store.dispatch(logout())
+//             // localStorage.removeItem("token")
+//             // localStorage.removeItem("user")
+//             // localStorage.removeItem("shop")
+//             window.location.href = "/login"
+//         }
+//         return Promise.reject(err)
+//     }
+// )
 
 import { logout } from "@/store/slices/authSlice";
 import { store } from "@/store/store";
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: "http://localhost:3000", // change to your backend
+    baseURL: "http://localhost:3000",
 })
 
 // attach token automatically
@@ -40,11 +57,18 @@ api.interceptors.response.use(
     (err) => {
         if (err.response?.status === 401) {
             store.dispatch(logout())
-            // localStorage.removeItem("token")
-            // localStorage.removeItem("user")
-            // localStorage.removeItem("shop")
             window.location.href = "/login"
         }
+
+        // ✅ add this
+        if (
+            err.response?.status === 403 &&
+            err.response?.data?.message === "TRIAL_EXPIRED"
+        ) {
+            store.dispatch(logout())
+            window.location.href = "/trial-expired"
+        }
+
         return Promise.reject(err)
     }
 )

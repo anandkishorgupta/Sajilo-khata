@@ -5,11 +5,9 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Post,
-  UseGuards,
+  Post
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
@@ -18,7 +16,7 @@ import { ExpensesService } from "./expenses.service";
 import { CreateExpenseDto } from "./dto";
 
 @Controller("expenses")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class ExpensesController {
   constructor(
     private readonly expensesService: ExpensesService,

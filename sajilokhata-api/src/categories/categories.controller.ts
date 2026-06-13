@@ -6,38 +6,36 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Put,
-  UseGuards,
+  Put
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 import { CategoriesService } from './categories.service';
+import { CreateCategoryDto, UpdateCategoryDto } from './dto';
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   create(@Body() dto: CreateCategoryDto, @CurrentUser() user: any) {
     return this.categoriesService.create(dto, user.shopId);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   findAll(@CurrentUser() user: any) {
     return this.categoriesService.findAll(user.shopId);
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.categoriesService.findOne(id, user.shopId);
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCategoryDto,
@@ -47,7 +45,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
     return this.categoriesService.remove(id, user.shopId);
   }

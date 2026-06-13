@@ -5,19 +5,17 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Post,
-  UseGuards,
+  Post
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
-import { PurchasesService } from "./purchases.service";
 import { CreatePurchaseDto } from "./dto";
+import { PurchasesService } from "./purchases.service";
 
 @Controller("purchases")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class PurchasesController {
-  constructor(private readonly purchasesService: PurchasesService) {}
+  constructor(private readonly purchasesService: PurchasesService) { }
 
   @Post()
   create(@Body() dto: CreatePurchaseDto, @CurrentUser() user: any) {

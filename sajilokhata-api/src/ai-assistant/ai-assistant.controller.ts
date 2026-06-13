@@ -1,22 +1,20 @@
 import {
   Body,
   Controller,
-  Post,
-  UseGuards,
+  Post
 } from "@nestjs/common";
 
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
 import { AiAssistantService } from "./ai-assistant.service";
 import { ChatRequestDto, ConfirmActionDto } from "./dto";
 
 @Controller("ai-assistant")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class AiAssistantController {
   constructor(
     private readonly aiAssistantService: AiAssistantService,
-  ) {}
+  ) { }
 
   // =====================================
   // CHAT

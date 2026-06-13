@@ -1,14 +1,13 @@
-import { Controller, Get, Query, UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { Controller, Get, Query } from "@nestjs/common";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
-import { StockMovementsService } from "./stock-movements.service";
 import { GetStockMovementsDto } from "./dto";
+import { StockMovementsService } from "./stock-movements.service";
 
 @Controller("stock-movements")
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 export class StockMovementsController {
-  constructor(private readonly service: StockMovementsService) {}
+  constructor(private readonly service: StockMovementsService) { }
 
   // =========================
   // GET REPORT ONLY

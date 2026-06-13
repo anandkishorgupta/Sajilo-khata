@@ -5,18 +5,16 @@ import {
     Get,
     Param,
     ParseIntPipe,
-    Post,
-    UseGuards,
+    Post
 } from '@nestjs/common';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 import { CreateSaleDto } from './dto';
 import { SalesService } from './sales.service';
 
 @Controller('sales')
-@UseGuards(JwtAuthGuard) // Apply JWT auth guard to all routes in this controller
+// @UseGuards(JwtAuthGuard) // Apply JWT auth guard to all routes in this controller
 export class SalesController {
     constructor(
         private readonly salesService: SalesService,

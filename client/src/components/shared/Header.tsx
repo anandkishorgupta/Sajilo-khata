@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom"
 export function Header() {
   const location = useLocation()
   const hideNav =
-    location.pathname === "/login" || location.pathname === "/register"
+    location.pathname === "/login" || location.pathname === "/register"|| location.pathname === "/trial-expired"
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
