@@ -1,6 +1,7 @@
 // app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
@@ -8,6 +9,8 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { SubscriptionGuard } from './auth/guards/subscription.guard';
 import { CategoriesModule } from './categories/categories.module';
 import { CustomersModule } from './customers/customers.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -15,6 +18,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { ImagekitModule } from './imagekit/imagekit.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { KhataTransactionsModule } from './khata-transactions/khata-transactions.module';
+import { PaymentModule } from './payment/payment.module';
 import { ProductsModule } from './products/products.module';
 import { PurchasesModule } from './purchases/purchases.module';
 import { SalesModule } from './sales/sales.module';
@@ -22,9 +26,6 @@ import { Shop } from './shops/entities';
 import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { SubscriptionGuard } from './auth/guards/subscription.guard';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -62,7 +63,8 @@ import { SubscriptionGuard } from './auth/guards/subscription.guard';
     InvoicesModule,
     CategoriesModule,
     AiAssistantModule,
-    TypeOrmModule.forFeature([Shop])
+    PaymentModule,
+    TypeOrmModule.forFeature([Shop]),
   ],
   controllers: [AppController],
   providers: [AppService

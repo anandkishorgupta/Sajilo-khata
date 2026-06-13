@@ -19,6 +19,7 @@ import SettingsPage from "@/pages/SettingsPage"
 import TrialExpiredPage from "@/pages/TrialExpiredPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
+import PaymentVerifyPage from "@/pages/PaymentVerifyPage";
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +44,7 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "/trial-expired", element: <TrialExpiredPage /> },
+      { path: "/payment/verify", element: <PaymentVerifyPage /> },
     ],
   },
 

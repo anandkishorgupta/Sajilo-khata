@@ -15,7 +15,7 @@ export class SubscriptionGuard implements CanActivate {
     private reflector: Reflector,
     @InjectRepository(Shop)
     private shopRepo: Repository<Shop>,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
@@ -24,11 +24,22 @@ export class SubscriptionGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
+    // subscription.guard.ts — check for it
+    const skipSubscription = this.reflector.getAllAndOverride<boolean>('skipSubscription', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (skipSubscription) return true;
+
     const user = context.switchToHttp().getRequest().user;
-    if (!user || !user.shopId) return false;
+    if (!user || !user.shopId) {
+      throw new ForbiddenException('SHOP_NOT_FOUND');
+    }
 
     const shop = await this.shopRepo.findOne({ where: { id: user.shopId } });
-    if (!shop) return false;
+    if (!shop) {
+      throw new ForbiddenException('SHOP_NOT_FOUND');
+    }
 
     if (shop.status === 'active') return true;
 

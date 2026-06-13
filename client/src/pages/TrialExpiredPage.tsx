@@ -1,5 +1,7 @@
 // src/pages/TrialExpiredPage.tsx
-import { ArrowRight, ShieldCheck, Database, Phone } from "lucide-react"
+import { api } from "@/services/api-client"
+import { ArrowRight, Database, Phone, ShieldCheck } from "lucide-react"
+import toast from "react-hot-toast"
 import { Link } from "react-router-dom"
 
 const PLAN_FEATURES = [
@@ -12,19 +14,29 @@ const PLAN_FEATURES = [
 ]
 
 export default function TrialExpiredPage() {
+  const handleUpgrade = async () => {
+    try {
+      const res = await api.post("/payments/initiate")
+      console.log("Payment initiation response:", res)
+      // Redirect to Khalti payment page
+      window.location.href = res.data.data.payment_url
+    } catch (err) {
+      toast.error("Could not initiate payment. Try again.")
+    }
+  }
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5 py-16">
-
       {/* Brand */}
-      <Link to="/" className="mb-10 text-lg font-bold tracking-tight text-foreground">
+      <Link
+        to="/"
+        className="mb-10 text-lg font-bold tracking-tight text-foreground"
+      >
         Sajilo <span className="text-emerald-600">Khata</span>
       </Link>
 
       <div className="w-full max-w-md">
-
         {/* Status card */}
         <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-
           {/* Icon */}
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950">
             <svg
@@ -78,12 +90,15 @@ export default function TrialExpiredPage() {
 
         {/* Features included */}
         <div className="mt-6 rounded-2xl border border-border bg-card p-6">
-          <p className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <p className="mb-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
             What you get with Pro
           </p>
           <ul className="space-y-2.5">
             {PLAN_FEATURES.map((feature) => (
-              <li key={feature} className="flex items-center gap-2.5 text-sm text-foreground">
+              <li
+                key={feature}
+                className="flex items-center gap-2.5 text-sm text-foreground"
+              >
                 <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-600" />
                 {feature}
               </li>
@@ -101,8 +116,13 @@ export default function TrialExpiredPage() {
             support@sajilokhata.com
           </a>
         </p>
-
       </div>
+      <button
+        onClick={handleUpgrade}
+        className="mt-6 cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+      >
+        Upgrade now — Rs 5/month
+      </button>
     </div>
   )
 }
