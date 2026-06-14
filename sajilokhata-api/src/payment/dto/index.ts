@@ -1,8 +1,14 @@
-// payments/dto/index.ts
+import { IsNotEmpty, IsString } from "class-validator";
+
+import { IsInt } from 'class-validator';
+
 export class InitiatePaymentDto {
-    planId: number; // which plan they're buying
+  @IsInt()
+  planId: number;
 }
 
 export class VerifyPaymentDto {
-    pidx: string;
+  @IsString()
+  @IsNotEmpty()
+  pidx: string;
 }

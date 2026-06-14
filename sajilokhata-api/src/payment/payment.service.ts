@@ -21,9 +21,9 @@ export class PaymentService {
     }
 
     // ── STEP 1: Initiate ──────────────────────────────────
-    async initiate(shopId: number, userId: number) {
+    async initiate(shopId: number) {
         const amount = 1000; // Rs 10 in paisa — hardcode for now, plan table later
-
+        const purchaseOrderId = `SHOP-${shopId}-${Date.now()}`; // generate once
         const response = await fetch(`${this.khaltiUrl}/epayment/initiate/`, {
             method: 'POST',
             headers: {
@@ -34,7 +34,7 @@ export class PaymentService {
                 return_url: 'http://localhost:5173/payment/verify', // your frontend verify page
                 website_url: 'http://localhost:5173',
                 amount,                          // in paisa
-                purchase_order_id: `SHOP-${shopId}-${Date.now()}`,
+                purchase_order_id: purchaseOrderId,
                 purchase_order_name: 'Sajilo Khata Pro Plan',
             }),
         });
@@ -52,6 +52,7 @@ export class PaymentService {
                 pidx: data.pidx,
                 amount,
                 status: 'pending',
+                purchaseOrderId,
             })
         );
 
@@ -62,7 +63,7 @@ export class PaymentService {
     }
 
     // ── STEP 2: Verify ────────────────────────────────────
-    async verify(pidx: string, shopId: number) {
+    async verify(pidx: string) {
         // 1. Call Khalti to verify
         const response = await fetch(`${this.khaltiUrl}/epayment/lookup/`, {
             method: 'POST',
@@ -75,19 +76,24 @@ export class PaymentService {
         console.log("Khalti verification response status:....................", response)
         const data = await response.json();
 
-        if (!response.ok) {
-            throw new BadRequestException('Payment verification failed');
-        }
+        // if (!response.ok) {
+        //     throw new BadRequestException('Payment verification failed');
+        // }
 
         // 2. Find the pending payment
         const payment = await this.paymentRepo.findOne({
-            where: { pidx, shop: { id: shopId } },
+            where: { pidx },
+            relations: ['shop'],
         });
 
         if (!payment) {
             throw new NotFoundException('Payment record not found');
         }
-
+        if (payment.status === 'completed') {
+            return {
+                message: 'Payment already verified',
+            };
+        }
         // 3. Check Khalti says it's completed
         if (data.status !== 'Completed') {
             payment.status = 'failed';
@@ -101,9 +107,25 @@ export class PaymentService {
         await this.paymentRepo.save(payment);
 
         // 5. Activate the shop — 30 days from now
-        await this.shopRepo.update(shopId, {
-            status: 'active',
-            subscriptionEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        const shop = payment.shop;
+        if (!shop) {
+            throw new NotFoundException('Shop not found');
+        }
+        const now = new Date();
+
+        const baseDate =
+            shop?.expiresAt && shop.expiresAt > now
+                ? shop.expiresAt
+                : now;
+
+        const expiresAt = new Date(
+            baseDate.getTime() +
+            30 * 24 * 60 * 60 * 1000 // add 30 days
+        );
+
+        await this.shopRepo.update(payment.shop.id, {
+            plan: 'pro',
+            expiresAt,
         });
 
         return { message: 'Payment verified. Shop activated!' };

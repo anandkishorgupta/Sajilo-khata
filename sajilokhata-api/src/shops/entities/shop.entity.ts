@@ -15,8 +15,6 @@ import { Sale } from '../../sales/entities';
 import { StockMovement } from '../../stock-movements/entities';
 import { User } from '../../users/entities';
 
-export type PlanType = 'trial' | 'pro';
-export type ShopStatus = 'trial' | 'active' | 'expired';
 
 @Entity('shops')
 export class Shop {
@@ -38,18 +36,17 @@ export class Shop {
     @OneToMany(() => Product, (product) => product.shop)
     products: Product[];
 
-    @Column({ type: 'varchar', default: 'trial' })
-    plan: PlanType;
+    @Column({
+        type: 'varchar',
+        default: 'trial',
+    })
+    plan: 'trial' | 'pro';
 
-    @Column({ name: 'trial_ends_at', type: 'timestamp', nullable: true })
-    trialEndsAt: Date;
-
-    @Column({ name: 'subscription_end', type: 'timestamp', nullable: true })
-    subscriptionEnd: Date;
-
-    @Column({ type: 'varchar', default: 'trial' })
-    status: ShopStatus;
-
+    @Column({
+        type: 'timestamp',
+        nullable: true,
+    })
+    expiresAt: Date;
 
     @OneToMany(() => Customer, (customer) => customer.shop)
     customers: Customer[];

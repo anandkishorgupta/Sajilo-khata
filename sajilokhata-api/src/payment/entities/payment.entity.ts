@@ -9,7 +9,7 @@ export class Payment {
   @ManyToOne(() => Shop)
   shop: Shop;
 
-  @Column()
+  @Column({ unique: true })
   pidx: string; // Khalti's payment ID
 
   @Column({ type: 'decimal' })
@@ -20,6 +20,9 @@ export class Payment {
 
   @Column({ nullable: true })
   transactionId: string; // from Khalti after verification
+
+  @Column()
+purchaseOrderId: string;
 
   @CreateDateColumn()
   createdAt: Date;

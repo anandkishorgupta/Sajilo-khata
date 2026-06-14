@@ -3,10 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
+import { Transactional } from 'typeorm-transactional';
 import { Shop } from '../shops/entities';
 import { User } from '../users/entities';
 import { LoginDto, RegisterDto } from './dto';
-import { Transactional } from 'typeorm-transactional';
 @Injectable()
 export class AuthService {
     constructor(
@@ -38,8 +38,9 @@ export class AuthService {
             address: dto.shopAddress,
             phone: dto.shopPhone,
             plan: 'trial',
-            status: 'trial',
-            trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            expiresAt: new Date(
+                Date.now() + 7 * 24 * 60 * 60 * 1000
+            ),
         });
 
         const savedShop = await this.shopRepo.save(shop);
@@ -66,9 +67,8 @@ export class AuthService {
             shop: {
                 id: savedShop.id,
                 name: savedShop.name,
-                status: savedShop.status,
                 plan: savedShop.plan,
-                trialEndsAt: savedShop.trialEndsAt,
+                expiresAt: savedShop.expiresAt,
             },
         };
     }
@@ -104,9 +104,8 @@ export class AuthService {
             shop: {
                 id: user.shop.id,
                 name: user.shop.name,
-                status: user.shop.status,
                 plan: user.shop.plan,
-                trialEndsAt: user.shop.trialEndsAt,
+                expiresAt: user.shop.expiresAt,
             },
         }
     }

@@ -25,11 +25,11 @@ api.interceptors.response.use(
             store.dispatch(logout())
             window.location.href = "/login"
         }
-
+        console.log("API error response:", err.response) // log the full error response for debugging
         // ✅ add this
         if (
             err.response?.status === 403 &&
-            err.response?.data?.message === "TRIAL_EXPIRED"
+            err.response?.data?.message === "SUBSCRIPTION_EXPIRED"
         ) {
             // store.dispatch(logout())
             window.location.href = "/trial-expired"

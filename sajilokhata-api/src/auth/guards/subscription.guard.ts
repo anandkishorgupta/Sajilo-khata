@@ -41,14 +41,21 @@ export class SubscriptionGuard implements CanActivate {
       throw new ForbiddenException('SHOP_NOT_FOUND');
     }
 
-    if (shop.status === 'active') return true;
+    const now = new Date();
 
-    if (shop.trialEndsAt < new Date()) {
-      shop.status = 'expired';
-      await this.shopRepo.save(shop);
-      throw new ForbiddenException('TRIAL_EXPIRED');
+    if (!shop.expiresAt) {
+      throw new ForbiddenException(
+        'SUBSCRIPTION_NOT_CONFIGURED'
+      );
     }
 
-    return true; // status is 'trial' and trialEndsAt is in the future
+    if (shop.expiresAt < new Date()) {
+      throw new ForbiddenException(
+        'SUBSCRIPTION_EXPIRED'
+      );
+    }
+
+    return true;
+
   }
 }
