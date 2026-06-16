@@ -10,6 +10,9 @@ import { Payment } from './entities';
 export class PaymentService {
     private readonly khaltiUrl: string;
     private readonly secretKey: string;
+    private readonly amount: number;
+    private readonly frontendUrl: string;
+    private readonly durationDays: number;
 
     constructor(
         private configService: ConfigService,
@@ -18,11 +21,21 @@ export class PaymentService {
     ) {
         this.khaltiUrl = this.configService.getOrThrow('KHALTI_GATEWAY_URL');
         this.secretKey = this.configService.getOrThrow('KHALTI_SECRET_KEY');
+        this.amount = Number(
+            this.configService.getOrThrow('PRO_PLAN_AMOUNT'),
+        );
+
+        this.frontendUrl =
+            this.configService.getOrThrow('FRONTEND_URL');
+
+        this.durationDays = Number(
+            this.configService.getOrThrow('PRO_PLAN_DURATION_DAYS'),
+        );
     }
 
     // ── STEP 1: Initiate ──────────────────────────────────
     async initiate(shopId: number) {
-        const amount = 1000; // Rs 10 in paisa — hardcode for now, plan table later
+        // const amount = 1000; // Rs 10 in paisa — hardcode for now, plan table later
         const purchaseOrderId = `SHOP-${shopId}-${Date.now()}`; // generate once
         const response = await fetch(`${this.khaltiUrl}/epayment/initiate/`, {
             method: 'POST',
@@ -31,9 +44,9 @@ export class PaymentService {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                return_url: 'http://localhost:5173/payment/verify', // your frontend verify page
-                website_url: 'http://localhost:5173',
-                amount,                          // in paisa
+                return_url: `${this.frontendUrl}/payment/verify`, // your frontend verify page
+                website_url: this.frontendUrl,
+                amount: this.amount * 100,                          // in paisa
                 purchase_order_id: purchaseOrderId,
                 purchase_order_name: 'Sajilo Khata Pro Plan',
             }),
@@ -50,7 +63,7 @@ export class PaymentService {
             this.paymentRepo.create({
                 shop: { id: shopId },
                 pidx: data.pidx,
-                amount,
+                amount: this.amount * 100,
                 status: 'pending',
                 purchaseOrderId,
             })
@@ -118,9 +131,11 @@ export class PaymentService {
                 ? shop.expiresAt
                 : now;
 
+        
+
         const expiresAt = new Date(
             baseDate.getTime() +
-            30 * 24 * 60 * 60 * 1000 // add 30 days
+            this.durationDays * 24 * 60 * 60 * 1000,
         );
 
         await this.shopRepo.update(payment.shop.id, {

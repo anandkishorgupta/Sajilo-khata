@@ -10,6 +10,7 @@ import { Expense } from "../expenses/entities";
 import { Product } from "../products/entities";
 import { KhataTransaction } from "../khata-transactions/entities";
 import { Customer } from "../customers/entities";
+import { AiConversation } from "./entities";
 
 import { SalesModule } from "../sales/sales.module";
 import { PurchasesModule } from "../purchases/purchases.module";
@@ -24,6 +25,7 @@ import { ExpensesModule } from "../expenses/expenses.module";
       Product,
       KhataTransaction,
       Customer,
+      AiConversation,
     ]),
     SalesModule,
     PurchasesModule,

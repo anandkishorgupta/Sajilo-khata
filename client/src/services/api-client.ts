@@ -3,7 +3,7 @@ import { store } from "@/store/store";
 import axios from "axios";
 
 export const api = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL,
 })
 
 // attach token automatically
@@ -25,7 +25,7 @@ api.interceptors.response.use(
             store.dispatch(logout())
             window.location.href = "/login"
         }
-        console.log("API error response:", err.response) // log the full error response for debugging
+
         // ✅ add this
         if (
             err.response?.status === 403 &&

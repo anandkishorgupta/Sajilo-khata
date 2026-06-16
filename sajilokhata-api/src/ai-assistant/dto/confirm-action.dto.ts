@@ -1,9 +1,10 @@
-import { IsObject, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from "class-validator";
 
 export class ConfirmActionDto {
   @IsString()
+  @IsNotEmpty()
   actionType: string;
 
-  @IsObject()
-  actionData: Record<string, any>;
+  @IsNotEmpty()
+  actionData: any;
 }
