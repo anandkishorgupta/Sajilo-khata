@@ -34,7 +34,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // ✅ TypeORM DB errors
     else if (exception instanceof QueryFailedError) {
       const pg = exception.driverError as any;
-
+this.logger.error('QueryFailedError:', exception.message, exception.stack); // 👈 add this
+  this.logger.error('PG Error code:', pg.code, pg.detail);
       switch (pg.code) {
         case '23505': // unique violation
           status = HttpStatus.CONFLICT;

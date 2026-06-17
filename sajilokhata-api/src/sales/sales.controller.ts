@@ -5,16 +5,19 @@ import {
     Get,
     Param,
     ParseIntPipe,
-    Post
+    Post,
+    Query,
+    UseGuards,
 } from '@nestjs/common';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
-import { CreateSaleDto } from './dto';
+import { CreateSaleDto, FindSalesDto } from './dto';
 import { SalesService } from './sales.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('sales')
-// @UseGuards(JwtAuthGuard) // Apply JWT auth guard to all routes in this controller
+@UseGuards(JwtAuthGuard)
 export class SalesController {
     constructor(
         private readonly salesService: SalesService,
@@ -23,56 +26,46 @@ export class SalesController {
     // CREATE SALE
     @Post()
     create(
-        @Body()
-        dto: CreateSaleDto,
-        @CurrentUser()
-        user: any,
+        @Body() dto: CreateSaleDto,
+        @CurrentUser() user: any,
     ) {
-        return this.salesService.create(
-            dto,
-            user.shopId,
-            user.userId,
-        );
+        return this.salesService.create(dto, user.shopId, user.userId);
     }
 
-    // GET ALL SALES
+    // GET ALL SALES (filtered + paginated)
     @Get()
     findAll(
-        @CurrentUser()
-        user: any,
+        @Query() query: FindSalesDto,
+        @CurrentUser() user: any,
     ) {
-        return this.salesService.findAll(
-            user.shopId,
-        );
+        console.log("User...", user);
+        return this.salesService.findAll(user.shopId, query);
+    }
+
+    // GET SALES SUMMARY (for stat cards)
+    @Get('summary')
+    getSummary(
+        @Query() query: FindSalesDto,
+        @CurrentUser() user: any,
+    ) {
+        return this.salesService.getSummary(user.shopId, query);
     }
 
     // GET SINGLE SALE
     @Get(':id')
     findOne(
-        @Param('id', ParseIntPipe)
-        id: number,
-
-        @CurrentUser()
-        user: any,
+        @Param('id', ParseIntPipe) id: number,
+        @CurrentUser() user: any,
     ) {
-        return this.salesService.findOne(
-            id,
-            user.shopId,
-        );
+        return this.salesService.findOne(id, user.shopId);
     }
 
     // DELETE SALE
     @Delete(':id')
     remove(
-        @Param('id', ParseIntPipe)
-        id: number,
-
-        @CurrentUser()
-        user: any,
+        @Param('id', ParseIntPipe) id: number,
+        @CurrentUser() user: any,
     ) {
-        return this.salesService.remove(
-            id,
-            user.shopId,
-        );
+        return this.salesService.remove(id, user.shopId);
     }
 }

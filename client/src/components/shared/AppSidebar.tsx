@@ -20,6 +20,7 @@ import {
   Package,
   Receipt,
   Settings,
+  ReceiptText,
   Sparkles,
   Store,
   Tags,
@@ -53,6 +54,11 @@ const items = [
     url: "/dashboard/billing",
   },
   {
+    title: "Sales",
+    icon: ReceiptText,
+    url: "/dashboard/sales",
+  },
+  {
     title: "Customers",
     icon: Users,
     url: "/dashboard/customers",
@@ -80,7 +86,6 @@ const items = [
 ]
 
 export function AppSidebar() {
-
   const shop = JSON.parse(localStorage.getItem("shop") || "null")
 
   const getInitials = (name?: string) => {

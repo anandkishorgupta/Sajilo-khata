@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/dashboard/DashboardPage"
 import ExpensePage from "@/pages/ExpensePage"
 import HomePage from "@/pages/HomePage"
 import KhataPage from "@/pages/KhataPage"
+import SalesPage from "@/pages/SalesPage"
 
 import AnalyticsPage from "@/pages/AnalyticsPage"
 import BillingPage from "@/pages/BillingPage"
@@ -60,6 +61,7 @@ export const router = createBrowserRouter([
 
       // ✅ ADD THIS
       { path: "/dashboard/billing", element: <BillingPage /> },
+      { path: "/dashboard/sales", element: <SalesPage /> },
       { path: "/dashboard/customers", element: <CustomersPage /> },
       { path: "/dashboard/analytics", element: <AnalyticsPage /> },
       { path: "/dashboard/settings", element: <SettingsPage /> },
