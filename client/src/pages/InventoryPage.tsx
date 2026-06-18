@@ -242,7 +242,7 @@ export default function InventoryPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
+                    <TableHead>Barcode</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Buy</TableHead>
                     <TableHead className="text-right">Sell</TableHead>

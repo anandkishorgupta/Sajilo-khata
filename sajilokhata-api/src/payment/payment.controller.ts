@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { SkipSubscription } from '../auth/decorators/skip-subscription.decorator';
 import { VerifyPaymentDto } from './dto';
@@ -21,4 +21,9 @@ export class PaymentController {
     verify(@Body() dto: VerifyPaymentDto) {
         return this.paymentsService.verify(dto.pidx);
     }
+
+     @Get('plan')
+  getPlan() {
+    return this.paymentsService.getPlanInfo();
+  }
 }

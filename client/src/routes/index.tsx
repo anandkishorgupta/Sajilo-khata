@@ -21,7 +21,7 @@ import TrialExpiredPage from "@/pages/TrialExpiredPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
 import PaymentVerifyPage from "@/pages/PaymentVerifyPage";
-
+import SubscriptionPage from "@/pages/SubscriptionPage"
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -69,6 +69,10 @@ export const router = createBrowserRouter([
       { path: "/dashboard/khata", element: <KhataPage /> },
       { path: "/dashboard/expenses", element: <ExpensePage /> },
       { path: "/dashboard/ai-assistant", element: <AiAssistantPage /> },
+       { 
+      path: "/dashboard/subscription",
+      element: <SubscriptionPage />
+    },
     ],
   },
 ])

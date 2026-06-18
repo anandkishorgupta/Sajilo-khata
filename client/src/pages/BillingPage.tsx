@@ -62,7 +62,9 @@ export default function BillingPage() {
 
   const { data } = useProducts({
     search: debouncedSearch,
+    limit: 1000,
   })
+  console.log("data...........", data)
 
   const products = data?.products ?? data ?? []
 

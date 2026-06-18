@@ -83,6 +83,11 @@ const items = [
     icon: Settings,
     url: "/dashboard/settings",
   },
+  {
+  title: "Subscription",
+  icon: Crown,
+  url: "/dashboard/subscription",
+}
 ]
 
 export function AppSidebar() {

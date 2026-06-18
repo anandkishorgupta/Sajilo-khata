@@ -34,8 +34,11 @@ import {
 } from "lucide-react"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
+import { useNavigate } from "react-router-dom"
 
 export default function SettingsPage() {
+  const navigate = useNavigate()
+
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -150,29 +153,9 @@ export default function SettingsPage() {
             Pro
           </Badge>
         )
-      case "basic":
-        return <Badge variant="secondary">Basic</Badge>
+
       default:
         return <Badge variant="outline">Trial</Badge>
-    }
-  }
-
-  function getStatusBadge(status: string) {
-    switch (status) {
-      case "active":
-        return (
-          <Badge className="border-green-500/30 bg-green-500/10 text-green-600">
-            Active
-          </Badge>
-        )
-      case "expired":
-        return <Badge variant="destructive">Expired</Badge>
-      default:
-        return (
-          <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-600">
-            Trial
-          </Badge>
-        )
     }
   }
 
@@ -191,6 +174,16 @@ export default function SettingsPage() {
     )
   }
 
+  function getDaysLeft(dateStr: string | null) {
+    if (!dateStr) return null
+
+    const expiry = new Date(dateStr)
+    const today = new Date()
+
+    const diff = expiry.getTime() - today.getTime()
+
+    return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  }
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
       {/* Header */}
@@ -311,25 +304,65 @@ export default function SettingsPage() {
                       <p className="text-sm font-medium">Current Plan</p>
                       <div className="mt-1 flex items-center gap-2">
                         {getPlanBadge(profile?.shop.plan ?? "trial")}
-                        {getStatusBadge(profile?.shop.status ?? "trial")}
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {profile?.shop.trialEndsAt && (
-                  <div className="flex items-center justify-between rounded-lg border border-blue-500/30 bg-blue-500/5 p-3">
+                {profile?.shop.expiresAt && (
+                  <div className="flex items-center justify-between rounded-lg border border-orange-500/30 bg-orange-500/5 p-3">
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-blue-500" />
+                      <Calendar className="h-4 w-4 text-orange-500" />
                       <div>
-                        <p className="text-sm font-medium">Trial Ends</p>
+                        <p className="text-sm font-medium">
+                          {profile?.shop.plan === "trial"
+                            ? "Trial Ends"
+                            : "Subscription Expires"}
+                        </p>
+
                         <p className="text-sm text-muted-foreground">
-                          {formatDate(profile.shop.trialEndsAt)}
+                          {formatDate(profile.shop.expiresAt)}
+                        </p>
+
+                        <p className="text-xs text-orange-600">
+                          {getDaysLeft(profile.shop.expiresAt)} days remaining
                         </p>
                       </div>
                     </div>
                   </div>
                 )}
+                {profile?.shop.plan === "trial" &&
+                  getDaysLeft(profile.shop.expiresAt) !== null &&
+                  getDaysLeft(profile.shop.expiresAt)! > 0 && (
+                    <Card className="border-yellow-500/30 bg-yellow-500/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Crown className="h-5 w-5 text-yellow-500" />
+                          Upgrade to Pro
+                        </CardTitle>
+
+                        <CardDescription>
+                          Unlock premium features and continue using Sajilo
+                          Khata without interruption.
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent>
+                        <ul className="mb-4 space-y-2 text-sm">
+                          <li>✓ Unlimited billing</li>
+                          <li>✓ AI Assistant</li>
+                          <li>✓ Advanced analytics</li>
+                          <li>✓ Priority support</li>
+                        </ul>
+
+                        <Button
+                          className="w-full"
+                          onClick={() => navigate("/dashboard/subscription")}
+                        >
+                          Upgrade Now
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
               </CardContent>
             </Card>
           </div>

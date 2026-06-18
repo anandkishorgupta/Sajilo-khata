@@ -1,19 +1,18 @@
 import { api } from "@/services/api-client"
 
-export type UserProfile = {
+export interface UserProfile {
   id: number
   name: string
   email: string
   createdAt: string
+
   shop: {
     id: number
     name: string
     address: string
     phone: string
-    plan: string
-    status: string
-    trialEndsAt: string | null
-    subscriptionEnd: string | null
+    plan: "trial" | "pro"
+    expiresAt: string | null
     createdAt: string
   }
 }

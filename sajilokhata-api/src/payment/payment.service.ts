@@ -131,7 +131,7 @@ export class PaymentService {
                 ? shop.expiresAt
                 : now;
 
-        
+
 
         const expiresAt = new Date(
             baseDate.getTime() +
@@ -144,5 +144,22 @@ export class PaymentService {
         });
 
         return { message: 'Payment verified. Shop activated!' };
+    }
+
+
+    getPlanInfo() {
+        return {
+            name: "Pro",
+            price: this.amount,
+            durationDays: this.durationDays,
+            features: [
+                "Unlimited billing & invoices",
+                "Full inventory management",
+                "Khata & customer ledger",
+                "AI assistant",
+                "Sales analytics",
+                "Priority support",
+            ],
+        };
     }
 }

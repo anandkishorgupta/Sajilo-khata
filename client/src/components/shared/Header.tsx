@@ -16,28 +16,7 @@ export function Header() {
           <span className="text-lg font-bold tracking-tight">Sajilo Khata</span>
         </Link>
 
-        {/* <nav className="hidden items-center gap-6 md:flex">
-          <a
-            href="#features"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Features
-          </a>
-
-          <a
-            href="#pricing"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Pricing
-          </a>
-
-          <a
-            href="#testimonials"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Customers
-          </a>
-        </nav> */}
+        
         {!hideNav && (
           <nav className="hidden items-center gap-6 md:flex">
             <a
