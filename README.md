@@ -40,49 +40,49 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 
 ### Authentication
 
-| Login | Register |
-|--------|----------|
+| Login                                | Register                                   |
+| ------------------------------------ | ------------------------------------------ |
 | ![Login](docs/screenshots/login.png) | ![Register](docs/screenshots/register.png) |
 
 ---
 
 ### Dashboard
 
-| Main Dashboard | Alternative Dashboard View |
-|----------------|---------------------------|
+| Main Dashboard                               | Alternative Dashboard View                      |
+| -------------------------------------------- | ----------------------------------------------- |
 | ![Dashboard](docs/screenshots/dashboard.png) | ![Dashboard 2](docs/screenshots/dashboard2.png) |
 
 ---
 
 ### Inventory & Categories
 
-| Inventory | Categories |
-|------------|------------|
+| Inventory                                    | Categories                                     |
+| -------------------------------------------- | ---------------------------------------------- |
 | ![Inventory](docs/screenshots/inventory.png) | ![Categories](docs/screenshots/categories.png) |
 
 ---
 
 ### Sales & Billing
 
-| Billing | Sales |
-|----------|-------|
+| Billing                                  | Sales                                |
+| ---------------------------------------- | ------------------------------------ |
 | ![Billing](docs/screenshots/billing.png) | ![Sales](docs/screenshots/sales.png) |
 
 ---
 
 ### Customer & Khata Management
 
-| Customers | Khata |
-|-----------|-------|
+| Customers                                    | Khata                                |
+| -------------------------------------------- | ------------------------------------ |
 | ![Customers](docs/screenshots/customers.png) | ![Khata](docs/screenshots/khata.png) |
 
 ---
 
 ### Business Operations
 
-| Expenses | Analytics |
-|-----------|-----------|
-| ![Expenses](docs/screenshots/expenses.png) | ![Analytics](docs/screenshots/analytics.png) |
+| Expenses                                  | Analytics                                    |
+| ----------------------------------------- | -------------------------------------------- |
+| ![Expenses](docs/screenshots/expense.png) | ![Analytics](docs/screenshots/analytics.png) |
 
 ---
 
@@ -94,26 +94,28 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 
 ### Subscription & Payments
 
-| Subscription | Khalti Payment |
-|--------------|----------------|
+| Subscription                                       | Khalti Payment                         |
+| -------------------------------------------------- | -------------------------------------- |
 | ![Subscription](docs/screenshots/subscription.png) | ![Khalti](docs/screenshots/khalti.png) |
+
 ## Features
 
-| Area | What it does |
-|---|---|
-| **Inventory** | Add products with barcode, category, purchase/selling price, low stock alerts |
-| **Sales & POS** | Billing with discount, tax, multiple payment methods, PDF invoice via Puppeteer |
-| **Purchases** | Record supplier purchases, auto-update stock, track due payments |
-| **Customer Khata** | Credit sales, payment collection, live outstanding balance per customer |
-| **Expenses** | Daily expense recording with categories |
-| **Subscription** | Trial/Pro plans enforced via global guard, Khalti payment integration |
-| **AI Assistant** | Ask natural language questions about your sales and inventory (DeepSeek API) |
+| Area               | What it does                                                                    |
+| ------------------ | ------------------------------------------------------------------------------- |
+| **Inventory**      | Add products with barcode, category, purchase/selling price, low stock alerts   |
+| **Sales & POS**    | Billing with discount, tax, multiple payment methods, PDF invoice via Puppeteer |
+| **Purchases**      | Record supplier purchases, auto-update stock, track due payments                |
+| **Customer Khata** | Credit sales, payment collection, live outstanding balance per customer         |
+| **Expenses**       | Daily expense recording with categories                                         |
+| **Subscription**   | Trial/Pro plans enforced via global guard, Khalti payment integration           |
+| **AI Assistant**   | Ask natural language questions about your sales and inventory (DeepSeek API)    |
 
 ---
 
 ## Tech Stack
 
 ### Frontend
+
 - **React** + **TypeScript** (Vite)
 - **Tailwind CSS** + **Shadcn UI**
 - **TanStack Query** — server state & caching
@@ -121,6 +123,7 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 - **Axios** with JWT interceptor + 401 auto-redirect
 
 ### Backend
+
 - **NestJS** + **TypeScript**
 - **TypeORM** + **PostgreSQL**
 - **JWT Authentication**
@@ -129,13 +132,14 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 - **ImageKit** — product image upload & management
 
 ### Infrastructure
-| Layer | Service |
-|---|---|
-| Frontend | Render |
-| Backend | Railway |
+
+| Layer    | Service               |
+| -------- | --------------------- |
+| Frontend | Render                |
+| Backend  | Railway               |
 | Database | Supabase (PostgreSQL) |
-| Payments | Khalti |
-| AI | DeepSeek API |
+| Payments | Khalti                |
+| AI       | DeepSeek API          |
 
 ---
 
@@ -180,7 +184,7 @@ A few things I'm particularly happy with in this project:
 - **Global subscription enforcement** — a `SubscriptionGuard` wraps every route. Trial shops hit a paywall after expiry without touching individual controllers, using a `@SkipSubscription()` decorator for public routes like the payment verify page.
 - **Khalti integration end-to-end** — initiate → verify → activate plan, with a `payments` table tracking `pidx`, `status`, and `transactionId`.
 - **Puppeteer PDF invoices** — replaced an initial PDFKit approach with a Puppeteer HTML-to-PDF pipeline for much richer invoice layouts.
-- **AI business assistant** — shop owners can ask things like *"which product sold the most this week?"* and get a natural language answer backed by real shop data passed as context.
+- **AI business assistant** — shop owners can ask things like _"which product sold the most this week?"_ and get a natural language answer backed by real shop data passed as context.
 - **Multi-tenancy** — every table has a `shop_id` foreign key. Guards extract the shop from the JWT and scope all queries automatically.
 
 ---
@@ -194,6 +198,7 @@ A few things I'm particularly happy with in this project:
 ## Workflows
 
 **Sale flow**
+
 ```
 Create Sale → Add Sale Items → Deduct Stock → Generate PDF Invoice
                     ↓
@@ -201,16 +206,19 @@ Create Sale → Add Sale Items → Deduct Stock → Generate PDF Invoice
 ```
 
 **Purchase flow**
+
 ```
 Create Purchase → Add Purchase Items → Increase Product Stock
 ```
 
 **Subscription flow**
+
 ```
 Initiate Khalti Payment → Redirect to Verify Page → Verify with Khalti API → Activate Pro Plan
 ```
 
 **Khata flow**
+
 ```
 Credit Sale → Khata Transaction (credit) → Customer Pays → Khata Transaction (payment) → Balance clears
 ```
@@ -404,6 +412,7 @@ erDiagram
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - PostgreSQL
 - Khalti test credentials
@@ -434,8 +443,6 @@ pnpm run dev
 ## What I'd improve next
 
 - Multi-user support per shop (roles: owner, staff)
-- Mobile app (React Native)
 - SMS reminders for overdue Khata balances
 - Advanced sales analytics dashboard
 - Supplier management module
-- Automated DB backup & restore

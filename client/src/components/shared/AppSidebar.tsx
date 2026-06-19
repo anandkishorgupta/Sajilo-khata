@@ -19,14 +19,14 @@ import {
   LayoutDashboard,
   Package,
   Receipt,
-  Settings,
   ReceiptText,
+  Settings,
   Sparkles,
   Store,
   Tags,
   Users,
 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 const items = [
   {
     title: "Dashboard",
@@ -84,15 +84,15 @@ const items = [
     url: "/dashboard/settings",
   },
   {
-  title: "Subscription",
-  icon: Crown,
-  url: "/dashboard/subscription",
-}
+    title: "Subscription",
+    icon: Crown,
+    url: "/dashboard/subscription",
+  },
 ]
 
 export function AppSidebar() {
   const shop = JSON.parse(localStorage.getItem("shop") || "null")
-
+  const location = useLocation()
   const getInitials = (name?: string) => {
     if (!name) return "?"
     return name
@@ -172,16 +172,24 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const isActive = location.pathname === item.url
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={item.title}
+                      isActive={isActive}
+                    >
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
