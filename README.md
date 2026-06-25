@@ -13,6 +13,13 @@
 | Password | demo1234 |
 
 ---
+## 🎥 Full Project Demo
+
+[![Sajilo Khata Demo](https://img.youtube.com/vi/wdGsFsxE5hs/maxresdefault.jpg)](https://youtu.be/wdGsFsxE5hs)
+
+## 💳 Khalti Payment Integration Demo
+
+[![Khalti Demo](https://img.youtube.com/vi/PqOBOXLfe4o/maxresdefault.jpg)](https://youtu.be/PqOBOXLfe4o)
 
 ## Why I built this
 
