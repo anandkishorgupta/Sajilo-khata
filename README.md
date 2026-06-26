@@ -184,6 +184,73 @@ graph LR
 
 ---
 
+## AI Assistant Workflow
+
+```mermaid
+flowchart LR
+
+    U[👤 User]
+
+    F[⚛️ React Frontend]
+
+    B[🚀 NestJS Backend]
+
+    AI[🧠 LLM<br/>Azure OpenAI / Meta Llama]
+
+    T[🛠️ Business Tools<br/>Sales • Inventory • Expense • Purchase • Khata]
+
+    DB[(🗄️ PostgreSQL)]
+
+    U -->|Ask Question| F
+    F -->|POST /ai/chat| B
+    B -->|Prompt + Chat History + Tool Definitions| AI
+
+    AI -->|Needs Data?| T
+    T --> DB
+    DB --> T
+    T --> AI
+
+    AI -->|Final Answer + Optional Chart JSON| B
+    B --> F
+    F --> U
+```
+
+## Tool Calling Flow
+
+```mermaid
+sequenceDiagram
+
+participant User
+participant React
+participant Backend
+participant LLM
+participant Tool
+participant Database
+
+User->>React: "Today's sales?"
+React->>Backend: POST /ai/chat
+
+Backend->>LLM: System Prompt + Messages + Tools
+
+LLM-->>Backend: tool_call(getTodaySales)
+
+Backend->>Tool: getTodaySales()
+
+Tool->>Database: Query today's sales
+
+Database-->>Tool: {total:15,count:1}
+
+Tool-->>Backend: JSON Result
+
+Backend->>LLM: Conversation + Tool Result
+
+LLM-->>Backend: "Today's sales is Rs 15"
+
+Backend-->>React: Final Response
+
+React-->>User: Display Message
+```
+
 ## Key Implementation Details
 
 A few things I'm particularly happy with in this project:
