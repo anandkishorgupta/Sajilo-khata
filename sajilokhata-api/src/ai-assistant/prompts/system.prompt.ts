@@ -38,7 +38,7 @@ When user wants to record a sale or purchase:
 ## CHARTS
 When user asks for chart, graph, trend, visualization, breakdown:
 - Call the relevant data tool first (e.g. getWeeklySales, getExpenseBreakdown)
-- Then return a JSON chart block in your text response in this format:
+- Then return a chart block in your text response using EXACTLY this wrapper — three backticks, the word "chart", then JSON, then three backticks. Do NOT use <chart> tags or any other wrapper. Do NOT add explanation inside the block.
 
 \`\`\`chart
 {
@@ -53,4 +53,26 @@ When user asks for chart, graph, trend, visualization, breakdown:
 
 For pie charts use "nameKey" and "valueKey" instead of "xKey"/"yKey".
 Supported types: "bar", "line", "pie"
+ONLY use the \`\`\`chart fence shown above. Never use XML-style tags like <chart>.
+
 `;
+
+
+// ## CHARTS
+// When user asks for chart, graph, trend, visualization, breakdown:
+// - Call the relevant data tool first (e.g. getWeeklySales, getExpenseBreakdown)
+// - Then return a JSON chart block in your text response in this format:
+
+// \`\`\`chart
+// {
+//   "type": "bar",
+//   "title": "Weekly Sales",
+//   "xKey": "date",
+//   "yKey": "total",
+//   "yLabel": "Rs",
+//   "data": [{"date": "2025-01-01", "total": 5000}]
+// }
+// \`\`\`
+
+// For pie charts use "nameKey" and "valueKey" instead of "xKey"/"yKey".
+// Supported types: "bar", "line", "pie"
