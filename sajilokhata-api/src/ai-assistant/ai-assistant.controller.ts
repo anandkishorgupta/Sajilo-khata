@@ -32,16 +32,16 @@ export class AiAssistantController {
 
   @Get("conversations")
   getConversations(@CurrentUser() user: any) {
-    return this.aiAssistantService.getConversations(user.shopId, user.id);
+    return this.aiAssistantService.getConversations(user.shopId, user.userId);
   }
 
   @Get("conversations/:id")
   getConversation(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: any) {
-    return this.aiAssistantService.getConversation(id, user.shopId, user.id);
+    return this.aiAssistantService.getConversation(id, user.shopId, user.userId);
   }
 
   @Delete("conversations/:id")
   deleteConversation(@Param("id", ParseIntPipe) id: number, @CurrentUser() user: any) {
-    return this.aiAssistantService.deleteConversation(id, user.shopId, user.id);
+    return this.aiAssistantService.deleteConversation(id, user.shopId, user.userId);
   }
 }
