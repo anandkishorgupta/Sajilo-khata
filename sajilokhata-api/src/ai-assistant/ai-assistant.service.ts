@@ -1,70 +1,35 @@
-import {
-  Injectable,
-  Logger,
-  InternalServerErrorException,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 
-import { Sale } from "../sales/entities";
-import { Purchase } from "../purchases/entities";
-import { Expense } from "../expenses/entities";
-import { Product } from "../products/entities";
-import { KhataTransaction } from "../khata-transactions/entities";
-import { Customer } from "../customers/entities";
-import { AiConversation } from "./entities";
-
-import { SalesService } from "../sales/sales.service";
-import { PurchasesService } from "../purchases/purchases.service";
-import { ExpensesService } from "../expenses/expenses.service";
-
 import { ChatMessageDto } from "./dto";
+import { AiConversation } from "./entities";
+import { AzureOpenAiService } from "./llm/azure.service";
+import { SYSTEM_PROMPT } from "./prompts/system.prompt";
+import { ExpenseTool } from "./tools/expense.tool";
+import { InventoryTool } from "./tools/inventory.tool";
+import { KhataTool } from "./tools/khata.tool";
+import { PurchaseTool } from "./tools/purchase.tool";
+import { SalesTool } from "./tools/sales.tool";
 
 @Injectable()
 export class AiAssistantService {
   private readonly logger = new Logger(AiAssistantService.name);
-  private readonly azureEndpoint: string;
-  private readonly azureApiKey: string;
-  private readonly azureDeployment: string;
-  private readonly azureApiVersion: string;
 
   constructor(
-    private configService: ConfigService,
-
-    @InjectRepository(Sale)
-    private saleRepo: Repository<Sale>,
-
-    @InjectRepository(Purchase)
-    private purchaseRepo: Repository<Purchase>,
-
-    @InjectRepository(Expense)
-    private expenseRepo: Repository<Expense>,
-
-    @InjectRepository(Product)
-    private productRepo: Repository<Product>,
-
-    @InjectRepository(KhataTransaction)
-    private khataRepo: Repository<KhataTransaction>,
-
-    @InjectRepository(Customer)
-    private customerRepo: Repository<Customer>,
+    private azureService: AzureOpenAiService,
+    private salesTool: SalesTool,
+    private expenseTool: ExpenseTool,
+    private inventoryTool: InventoryTool,
+    private khataTool: KhataTool,
+    private purchaseTool: PurchaseTool,
 
     @InjectRepository(AiConversation)
     private conversationRepo: Repository<AiConversation>,
-
-    private salesService: SalesService,
-    private purchasesService: PurchasesService,
-    private expensesService: ExpensesService,
-  ) {
-    this.azureEndpoint = this.configService.getOrThrow<string>("AZURE_OPENAI_ENDPOINT");
-    this.azureApiKey = this.configService.getOrThrow<string>("AZURE_OPENAI_API_KEY");
-    this.azureDeployment = this.configService.getOrThrow<string>("AZURE_OPENAI_DEPLOYMENT");
-    this.azureApiVersion = this.configService.get<string>("AZURE_OPENAI_API_VERSION") || "2024-02-15-preview";
-  }
+  ) { }
 
   // =====================================
-  // CHAT
+  // CHAT — agentic tool-calling loop
   // =====================================
   async chat(
     messages: ChatMessageDto[],
@@ -72,151 +37,371 @@ export class AiAssistantService {
     userId: number,
     conversationId?: number,
   ) {
-    const context = await this.getShopContext(shopId);
-    const products = await this.getProductList(shopId);
-    const customers = await this.getCustomerList(shopId);
+    const apiMessages: any[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+    ];
 
-    const systemPrompt = this.buildSystemPrompt(context, products, customers);
+    let response = await this.azureService.call(apiMessages, this.toolDefinitions());
 
-    const response = await this.callAzureOpenAI(systemPrompt, messages);
+    // Agentic loop — keep going until Azure stops calling tools
+    while (response.finish_reason === "tool_calls") {
+      const toolCalls: any[] = response.message.tool_calls ?? [];
 
-    // Parse the response
-    const result = this.parseAiResponse(response);
+      // Append assistant message with tool_calls to history
+      apiMessages.push(response.message);
 
-    // Save conversation
-    const savedConversation = await this.saveConversation(
+      // Execute all tool calls in parallel
+      const toolResults = await Promise.all(
+        toolCalls.map(async (tc) => {
+          const args = JSON.parse(tc.function.arguments || "{}");
+          this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
+          const result = await this.executeTool(tc.function.name, args, shopId, userId);
+          return {
+            role: "tool" as const,
+            tool_call_id: tc.id,
+            content: JSON.stringify(result),
+          };
+        }),
+      );
+      // const toolResults = await Promise.all(
+      //   toolCalls.map(async (tc) => {
+      //     let args: any = {};
+      //     try {
+      //       const parsed = JSON.parse(tc.function.arguments || "{}");
+      //       args = parsed && typeof parsed === "object" ? parsed : {};
+      //     } catch {
+      //       this.logger.warn(`Failed to parse args for ${tc.function.name}: ${tc.function.arguments}`);
+      //       args = {};
+      //     }
+      //     this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
+      //     const result = await this.executeTool(tc.function.name, args, shopId, userId);
+      //     return {
+      //       role: "tool" as const,
+      //       tool_call_id: tc.id,
+      //       content: JSON.stringify(result),
+      //     };
+      //   }),
+      // );
+      apiMessages.push(...toolResults);
+      response = await this.azureService.call(apiMessages, this.toolDefinitions());
+    }
+
+    const finalMessage = response.message.content ?? "";
+    const parsed = this.parseChartFromText(finalMessage);
+
+    const saved = await this.saveConversation(
       messages,
-      result,
+      parsed,
       shopId,
       userId,
       conversationId,
     );
 
-    return {
-      ...result,
-      conversationId: savedConversation.id,
-    };
+    return { ...parsed, conversationId: saved.id };
   }
 
   // =====================================
-  // PARSE AI RESPONSE
+  // TOOL ROUTER
   // =====================================
-  private parseAiResponse(response: string) {
-    // Check if AI wants to perform an action
-    const actionMatch = response.match(
-      /\[ACTION:(\w+)\]([\s\S]*?)\[\/ACTION\]/,
-    );
-
-    if (actionMatch) {
-      const actionType = actionMatch[1];
-      const validActions = ["CREATE_SALE", "CREATE_PURCHASE", "CREATE_EXPENSE"];
-
-      if (validActions.includes(actionType)) {
-        const actionData = actionMatch[2].trim();
-        const textBeforeAction = response
-          .substring(0, actionMatch.index)
-          .trim();
-
-        return {
-          message: textBeforeAction,
-          pendingAction: {
-            type: actionType,
-            data: JSON.parse(actionData),
-          },
-          options: null,
-          chart: null,
-        };
-      }
-    }
-
-    // Check if AI is asking the user to choose between options
-    const optionsMatch = response.match(
-      /\[OPTIONS\]([\s\S]*?)\[\/OPTIONS\]/,
-    );
-
-    if (optionsMatch) {
-      const optionsData = optionsMatch[1].trim();
-      const textBeforeOptions = response
-        .substring(0, optionsMatch.index)
-        .trim();
-
-      return {
-        message: textBeforeOptions,
-        pendingAction: null,
-        options: JSON.parse(optionsData),
-        chart: null,
-      };
-    }
-
-    // Check if AI wants to show a chart
-    const chartMatch = response.match(
-      /\[CHART\]([\s\S]*?)\[\/CHART\]/,
-    );
-
-    if (chartMatch) {
-      const chartData = chartMatch[1].trim();
-      const textWithoutChart = response
-        .replace(/\[CHART\][\s\S]*?\[\/CHART\]/, "")
-        .trim();
-
-      return {
-        message: textWithoutChart,
-        pendingAction: null,
-        options: null,
-        chart: JSON.parse(chartData),
-      };
-    }
-
-    return { message: response, pendingAction: null, options: null, chart: null };
-  }
-
-  // =====================================
-  // SAVE CONVERSATION
-  // =====================================
-  private async saveConversation(
-    messages: ChatMessageDto[],
-    result: { message: string; pendingAction: any; options: any; chart: any },
+  private async executeTool(
+    name: string,
+    args: any,
     shopId: number,
     userId: number,
-    conversationId?: number,
-  ): Promise<AiConversation> {
-    const assistantMsg: any = { role: "assistant", content: result.message };
-    if (result.chart) assistantMsg.chart = result.chart;
-    if (result.pendingAction) assistantMsg.pendingAction = result.pendingAction;
-    if (result.options) assistantMsg.options = result.options;
+  ): Promise<any> {
+    switch (name) {
+      // Sales
+      case "getTodaySales": return this.salesTool.getTodaySales(shopId);
+      case "getWeeklySales": return this.salesTool.getWeeklySales(shopId, args.days);
+      case "getTopSelling": return this.salesTool.getTopSelling(shopId, args.limit);
+      case "getRecentSales": return this.salesTool.getRecentSales(shopId, args.limit);
+      case "createSale": return this.salesTool.createSale(args, shopId, userId);
 
-    if (conversationId) {
-      // Update existing conversation
-      const conversation = await this.conversationRepo.findOne({
-        where: { id: conversationId, shop: { id: shopId }, user: { id: userId } },
-      });
+      // Expenses
+      case "getTodayExpense": return this.expenseTool.getTodayExpense(shopId);
+      case "getExpenseBreakdown": return this.expenseTool.getExpenseBreakdown(shopId, args.days);
+      case "getMonthlyExpense": return this.expenseTool.getMonthlyExpense(shopId);
+      case "createExpense": return this.expenseTool.createExpense(args, shopId);
 
-      if (conversation) {
-        conversation.messages = [
-          ...messages,
-          assistantMsg,
-        ];
-        return this.conversationRepo.save(conversation);
+      // Inventory
+      case "getLowStock": return this.inventoryTool.getLowStock(shopId);
+      case "getProductCatalog": return this.inventoryTool.getProductCatalog(shopId);
+      case "getInventoryValue": return this.inventoryTool.getInventoryValue(shopId);
+      case "getCustomerList": return this.inventoryTool.getCustomerList(shopId);
+
+      // Khata
+      case "getTotalDue": return this.khataTool.getTotalDue(shopId);
+      case "getCustomerDues": return this.khataTool.getCustomerDues(shopId);
+
+      // Purchases
+      case "getTodayPurchase": return this.purchaseTool.getTodayPurchase(shopId);
+      case "getPurchaseSummary": return this.purchaseTool.getPurchaseSummary(shopId, args.days);
+      case "createPurchase": return this.purchaseTool.createPurchase(args, shopId, userId);
+
+      default:
+        this.logger.warn(`Unknown tool: ${name}`);
+        return { error: `Unknown tool: ${name}` };
+    }
+  }
+
+  // =====================================
+  // TOOL DEFINITIONS (sent to Azure)
+  // =====================================
+  private toolDefinitions() {
+    return [
+      // ── Sales ──
+      {
+        type: "function",
+        function: {
+          name: "getTodaySales",
+          description: "Get today's total sales amount and transaction count. Use for: aaja ko bikri, today's sales, today's revenue.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getWeeklySales",
+          description: "Get daily sales breakdown for the last N days. Use for: weekly report, sales trend, last 7 days, hapta ko bikri.",
+          parameters: {
+            type: "object",
+            properties: {
+              days: { type: "number", description: "Number of past days. Default 7." },
+            },
+            required: [],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getTopSelling",
+          description: "Get top selling products by quantity sold. Use for: best sellers, popular products, top products, sabai bhandaa bढi bikne.",
+          parameters: {
+            type: "object",
+            properties: {
+              limit: { type: "number", description: "How many products to return. Default 10." },
+            },
+            required: [],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getRecentSales",
+          description: "Get list of most recent sales with items and customer info.",
+          parameters: {
+            type: "object",
+            properties: {
+              limit: { type: "number", description: "How many recent sales. Default 10." },
+            },
+            required: [],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "createSale",
+          description: "Record a new sale transaction. Call getProductCatalog first to get product IDs.",
+          parameters: {
+            type: "object",
+            properties: {
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    productId: { type: "number" },
+                    quantity: { type: "number" },
+                    unitPrice: { type: "number" },
+                  },
+                  required: ["productId", "quantity", "unitPrice"],
+                },
+              },
+              paymentMethod: { type: "string", enum: ["cash", "card", "online"], description: "Default: cash" },
+              paidAmount: { type: "number" },
+              customerId: { type: "number", description: "Optional customer ID" },
+              note: { type: "string" },
+            },
+            required: ["items", "paidAmount"],
+          },
+        },
+      },
+
+      // ── Expenses ──
+      {
+        type: "function",
+        function: {
+          name: "getTodayExpense",
+          description: "Get today's total expenses. Use for: aaja ko kharcha, today's spending.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getExpenseBreakdown",
+          description: "Get expenses grouped by category. Use for: expense breakdown, kharcha ko vivaran, spending analysis.",
+          parameters: {
+            type: "object",
+            properties: {
+              days: { type: "number", description: "Past N days. Omit for all time." },
+            },
+            required: [],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getMonthlyExpense",
+          description: "Get this month's total expenses.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "createExpense",
+          description: "Record a new expense.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              amount: { type: "number" },
+              category: { type: "string" },
+              note: { type: "string" },
+            },
+            required: ["title", "amount"],
+          },
+        },
+      },
+
+      // ── Inventory ──
+      {
+        type: "function",
+        function: {
+          name: "getLowStock",
+          description: "Get products that are low on stock or below their minimum limit. Use for: low stock alert, stock out, khatiyeko maal.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getProductCatalog",
+          description: "Get full product list with IDs, names, prices, and stock. REQUIRED before creating any sale or purchase.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getInventoryValue",
+          description: "Get total inventory value at cost and selling price. Use for: stock value, inventory worth.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getCustomerList",
+          description: "Get list of all customers with phone numbers. Use before creating a sale for a specific customer.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+
+      // ── Khata ──
+      {
+        type: "function",
+        function: {
+          name: "getTotalDue",
+          description: "Get total outstanding customer dues. Use for: total due, total credit, khata, udhaaro.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getCustomerDues",
+          description: "Get dues broken down per customer. Use for: who owes money, customer wise due, pratyek customer ko udhaaro.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+
+      // ── Purchases ──
+      {
+        type: "function",
+        function: {
+          name: "getTodayPurchase",
+          description: "Get today's total purchases. Use for: aaja ko kharid, today's purchase.",
+          parameters: { type: "object", properties: {}, required: [] },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getPurchaseSummary",
+          description: "Get purchase total for last N days.",
+          parameters: {
+            type: "object",
+            properties: {
+              days: { type: "number", description: "Past N days. Default 30." },
+            },
+            required: [],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "createPurchase",
+          description: "Record a new purchase/stock-in. Call getProductCatalog first.",
+          parameters: {
+            type: "object",
+            properties: {
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    productId: { type: "number" },
+                    quantity: { type: "number" },
+                    unitPrice: { type: "number" },
+                  },
+                  required: ["productId", "quantity", "unitPrice"],
+                },
+              },
+              paymentMethod: { type: "string", enum: ["cash", "card", "online"] },
+              paidAmount: { type: "number" },
+              note: { type: "string" },
+            },
+            required: ["items", "paidAmount"],
+          },
+        },
+      },
+    ];
+  }
+
+  // =====================================
+  // PARSE CHART FROM TEXT
+  // Only thing left to parse — no more [ACTION] regex
+  // =====================================
+  private parseChartFromText(text: string): { message: string; chart: any | null } {
+    const chartMatch = text.match(/```chart\s*([\s\S]*?)```/);
+    if (chartMatch) {
+      try {
+        const chart = JSON.parse(chartMatch[1].trim());
+        const message = text.replace(/```chart[\s\S]*?```/, "").trim();
+        return { message, chart };
+      } catch {
+        // malformed chart JSON — just return text
       }
     }
-
-    // Create new conversation
-    const lastUserMessage = messages.filter((m) => m.role === "user").pop();
-    const title = lastUserMessage
-      ? lastUserMessage.content.substring(0, 80)
-      : "New conversation";
-
-    const conversation = this.conversationRepo.create({
-      shop: { id: shopId } as any,
-      user: { id: userId } as any,
-      title,
-      messages: [
-        ...messages,
-        assistantMsg,
-      ],
-    });
-
-    return this.conversationRepo.save(conversation);
+    return { message: text, chart: null };
   }
 
   // =====================================
@@ -240,413 +425,43 @@ export class AiAssistantService {
     const conversation = await this.conversationRepo.findOne({
       where: { id, shop: { id: shopId }, user: { id: userId } },
     });
-    if (conversation) {
-      await this.conversationRepo.remove(conversation);
-    }
+    if (conversation) await this.conversationRepo.remove(conversation);
     return { deleted: true };
   }
 
   // =====================================
-  // CONFIRM ACTION
+  // SAVE CONVERSATION
   // =====================================
-  async confirmAction(
-    actionType: string,
-    actionData: any,
+  private async saveConversation(
+    messages: ChatMessageDto[],
+    result: { message: string; chart: any | null },
     shopId: number,
     userId: number,
-  ) {
-    switch (actionType) {
-      case "CREATE_SALE":
-        return this.executeSale(actionData, shopId, userId);
+    conversationId?: number,
+  ): Promise<AiConversation> {
+    const assistantMsg: any = { role: "assistant", content: result.message };
+    if (result.chart) assistantMsg.chart = result.chart;
 
-      case "CREATE_PURCHASE":
-        return this.executePurchase(actionData, shopId, userId);
-
-      case "CREATE_EXPENSE":
-        return this.executeExpense(actionData, shopId, userId);
-
-      default:
-        throw new InternalServerErrorException(
-          `Unknown action type: ${actionType}`,
-        );
-    }
-  }
-
-  // =====================================
-  // EXECUTE ACTIONS
-  // =====================================
-  private async executeSale(data: any, shopId: number, userId: number) {
-    return this.salesService.create(data, shopId, userId);
-  }
-
-  private async executePurchase(data: any, shopId: number, userId: number) {
-    return this.purchasesService.create(data, shopId, userId);
-  }
-
-  private async executeExpense(data: any, shopId: number, userId: number) {
-    return this.expensesService.create(data, shopId);
-  }
-
-  // =====================================
-  // SHOP CONTEXT
-  // =====================================
-  private async getShopContext(shopId: number) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const allSales = await this.saleRepo.find({
-      where: { shop: { id: shopId } },
-      relations: { items: { product: true }, customer: true },
-      order: { createdAt: "DESC" },
-    });
-
-    const todaySales = allSales.filter((s) => s.createdAt >= today);
-    const todaySalesTotal = todaySales.reduce(
-      (sum, s) => sum + Number(s.totalAmount),
-      0,
-    );
-
-    const allProducts = await this.productRepo.find({
-      where: { shop: { id: shopId } },
-    });
-
-    const lowStockProducts = allProducts.filter(
-      (p) => p.stock <= p.lowStockLimit,
-    );
-
-    const khataTransactions = await this.khataRepo.find({
-      where: { shop: { id: shopId } },
-    });
-
-    const totalCredit = khataTransactions
-      .filter((t) => t.type === "credit")
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    const totalPayment = khataTransactions
-      .filter((t) => t.type === "payment")
-      .reduce((sum, t) => sum + Number(t.amount), 0);
-    const totalDue = totalCredit - totalPayment;
-
-    const expenses = await this.expenseRepo.find({
-      where: { shop: { id: shopId } },
-    });
-    const todayExpenses = expenses.filter((e) => e.createdAt >= today);
-    const todayExpensesTotal = todayExpenses.reduce(
-      (sum, e) => sum + Number(e.amount),
-      0,
-    );
-
-    const purchases = await this.purchaseRepo.find({
-      where: { shop: { id: shopId } },
-    });
-    const todayPurchases = purchases.filter((p) => p.createdAt >= today);
-    const todayPurchasesTotal = todayPurchases.reduce(
-      (sum, p) => sum + Number(p.totalAmount),
-      0,
-    );
-
-    // Aggregate top-selling products from all sales history
-    const productSalesMap = new Map<number, { name: string; totalQty: number; totalRevenue: number }>();
-    for (const sale of allSales) {
-      if (!sale.items) continue;
-      for (const item of sale.items) {
-        const pid = item.product?.id;
-        if (!pid) continue;
-        const existing = productSalesMap.get(pid) || { name: item.product.name, totalQty: 0, totalRevenue: 0 };
-        existing.totalQty += Number(item.quantity);
-        existing.totalRevenue += Number(item.quantity) * Number(item.unitPrice);
-        productSalesMap.set(pid, existing);
+    if (conversationId) {
+      const existing = await this.conversationRepo.findOne({
+        where: { id: conversationId, shop: { id: shopId }, user: { id: userId } },
+      });
+      if (existing) {
+        existing.messages = [...messages, assistantMsg];
+        return this.conversationRepo.save(existing);
       }
     }
-    const topSellingProducts = Array.from(productSalesMap.entries())
-      .map(([id, data]) => ({ id, ...data }))
-      .sort((a, b) => b.totalQty - a.totalQty)
-      .slice(0, 10);
 
-    // Recent sales (last 10)
-    const recentSales = allSales.slice(0, 10).map((s) => ({
-      date: s.createdAt,
-      total: Number(s.totalAmount),
-      items: s.items?.map((i) => `${i.product?.name} x${i.quantity}`) || [],
-      customer: s.customer?.name || "Walk-in",
-    }));
+    const lastUser = messages.filter((m) => m.role === "user").pop();
+    const title = lastUser ? lastUser.content.substring(0, 80) : "New conversation";
 
-    // Daily sales for last 7 days
-    const dailySales: { date: string; total: number; count: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      const nextD = new Date(d);
-      nextD.setDate(nextD.getDate() + 1);
-      const daySales = allSales.filter((s) => s.createdAt >= d && s.createdAt < nextD);
-      dailySales.push({
-        date: d.toISOString().split("T")[0],
-        total: daySales.reduce((sum, s) => sum + Number(s.totalAmount), 0),
-        count: daySales.length,
-      });
-    }
-
-    // Expense breakdown by category
-    const expenseByCategoryMap = new Map<string, number>();
-    for (const e of expenses) {
-      const cat = (e as any).category || "Other";
-      expenseByCategoryMap.set(cat, (expenseByCategoryMap.get(cat) || 0) + Number(e.amount));
-    }
-    const expenseByCategory = Array.from(expenseByCategoryMap.entries())
-      .map(([category, amount]) => ({ category, amount }))
-      .sort((a, b) => b.amount - a.amount);
-
-    // Stock distribution by category
-    const stockByCategoryMap = new Map<string, { count: number; totalStock: number; totalValue: number }>();
-    for (const p of allProducts) {
-      const cat = (p as any).category?.name || "Uncategorized";
-      const existing = stockByCategoryMap.get(cat) || { count: 0, totalStock: 0, totalValue: 0 };
-      existing.count++;
-      existing.totalStock += Number(p.stock);
-      existing.totalValue += Number(p.stock) * Number(p.sellingPrice);
-      stockByCategoryMap.set(cat, existing);
-    }
-    const stockByCategory = Array.from(stockByCategoryMap.entries())
-      .map(([category, data]) => ({ category, ...data }))
-      .sort((a, b) => b.totalValue - a.totalValue);
-
-    return {
-      todaySalesTotal,
-      todaySalesCount: todaySales.length,
-      totalSalesAllTime: allSales.length,
-      totalRevenueAllTime: allSales.reduce((sum, s) => sum + Number(s.totalAmount), 0),
-      todayPurchasesTotal,
-      todayExpensesTotal,
-      totalProducts: allProducts.length,
-      lowStockProducts: lowStockProducts.map((p) => ({
-        id: p.id,
-        name: p.name,
-        stock: p.stock,
-        lowStockLimit: p.lowStockLimit,
-      })),
-      totalDue,
-      topSellingProducts,
-      recentSales,
-      dailySales,
-      expenseByCategory,
-      stockByCategory,
-    };
-  }
-
-  // =====================================
-  // PRODUCT LIST
-  // =====================================
-  private async getProductList(shopId: number) {
-    const products = await this.productRepo.find({
-      where: { shop: { id: shopId }, isActive: true },
-      select: ["id", "name", "barcode", "sellingPrice", "purchasePrice", "stock", "category"],
-    });
-    return products;
-  }
-
-  // =====================================
-  // CUSTOMER LIST
-  // =====================================
-  private async getCustomerList(shopId: number) {
-    const customers = await this.customerRepo.find({
-      where: { shop: { id: shopId } },
-      select: ["id", "name", "phone"],
-    });
-    return customers;
-  }
-
-  // =====================================
-  // SYSTEM PROMPT
-  // =====================================
-  private buildSystemPrompt(
-    context: any,
-    products: any[],
-    customers: any[],
-  ): string {
-    return `You are the AI assistant for Sajilo Khata, a shop management and POS system. You help shop owners manage their business.
-
-## YOUR CAPABILITIES
-1. Answer questions about how the app works (features, navigation, how-to)
-2. Answer data queries using the real-time shop data provided below
-3. Help record sales, purchases, and expenses from natural language
-4. Generate charts/graphs when the user asks for visual data representation
-
-## CURRENT SHOP DATA (Real-time)
-- Today's Sales: Rs ${context.todaySalesTotal} (${context.todaySalesCount} transactions)
-- Today's Purchases: Rs ${context.todayPurchasesTotal}
-- Today's Expenses: Rs ${context.todayExpensesTotal}
-- Total Products: ${context.totalProducts}
-- Total Customer Dues: Rs ${context.totalDue}
-- Total Sales (All Time): ${context.totalSalesAllTime} transactions, Rs ${context.totalRevenueAllTime}
-- Low Stock Products: ${context.lowStockProducts.length > 0 ? context.lowStockProducts.map((p: any) => `${p.name} (${p.stock}/${p.lowStockLimit})`).join(", ") : "None"}
-
-## TOP SELLING PRODUCTS (All Time, by quantity sold)
-${context.topSellingProducts.length > 0 ? context.topSellingProducts.map((p: any, i: number) => `${i + 1}. ${p.name} — ${p.totalQty} units sold, Rs ${p.totalRevenue} revenue`).join("\n") : "No sales recorded yet"}
-
-## RECENT SALES (Last 10)
-${context.recentSales.length > 0 ? context.recentSales.map((s: any) => `- ${new Date(s.date).toLocaleDateString()} | Rs ${s.total} | ${s.customer} | ${s.items.join(", ")}`).join("\n") : "No sales recorded yet"}
-
-## DAILY SALES (Last 7 Days)
-${context.dailySales.map((d: any) => `- ${d.date}: Rs ${d.total} (${d.count} sales)`).join("\n")}
-
-## EXPENSE BREAKDOWN (By Category)
-${context.expenseByCategory.length > 0 ? context.expenseByCategory.map((e: any) => `- ${e.category}: Rs ${e.amount}`).join("\n") : "No expenses recorded"}
-
-## STOCK BY CATEGORY
-${context.stockByCategory.length > 0 ? context.stockByCategory.map((s: any) => `- ${s.category}: ${s.count} products, ${s.totalStock} units, Rs ${s.totalValue} value`).join("\n") : "No products"}
-
-## PRODUCT CATALOG
-${products.map((p) => `- ID:${p.id} | ${p.name} | SKU:${p.sku} | Price:Rs${p.sellingPrice} | Cost:Rs${p.purchasePrice} | Stock:${p.stock} | Category:${p.category}`).join("\n")}
-
-## CUSTOMER LIST
-${customers.length > 0 ? customers.map((c) => `- ID:${c.id} | ${c.name} | Phone:${c.phone}`).join("\n") : "No customers yet"}
-
-## APP FEATURES (for answering how-to questions)
-- Dashboard: Overview of sales, purchases, expenses, profit, low stock alerts
-- Inventory: Add/edit/delete products, search, filter by category/stock, pagination
-- Billing: POS system - select products, create cart, choose payment method, generate invoice
-- Customers: Add/manage customers, view purchase history
-- Khata: Credit ledger - track customer dues, record payments
-- Suppliers: Manage suppliers, track purchases, record payments
-- Categories: Organize products into categories
-- Analytics: Charts for sales trends, top products, expense breakdown
-- Settings: Update profile, shop info, change password
-
-## CREATING TRANSACTIONS
-When the user asks to record a sale, purchase, or expense in natural language:
-1. Match product names to the product catalog above (use fuzzy matching - "rice" matches "Basmati Rice", etc.)
-2. Show a clear summary of what will be saved
-3. Include the action block so the system can execute it after user confirmation
-
-For SALES, output this format:
-[ACTION:CREATE_SALE]
-{
-  "items": [{"productId": <id>, "quantity": <qty>, "unitPrice": <price>}],
-  "paymentMethod": "cash",
-  "paidAmount": <total>,
-  "note": "<description>"
-}
-[/ACTION]
-
-For PURCHASES, output this format:
-[ACTION:CREATE_PURCHASE]
-{
-  "items": [{"productId": <id>, "quantity": <qty>, "unitPrice": <cost_price>}],
-  "paymentMethod": "cash",
-  "paidAmount": <total>,
-  "note": "<description>"
-}
-[/ACTION]
-
-For EXPENSES, output this format:
-[ACTION:CREATE_EXPENSE]
-{
-  "title": "<title>",
-  "amount": <amount>,
-  "category": "<category>",
-  "note": "<note>"
-}
-[/ACTION]
-
-## IMPORTANT RULES
-- Always use product IDs from the catalog. If a product is not found, tell the user.
-- Use sellingPrice for sales, purchasePrice for purchases.
-- Default payment method is "cash" unless user specifies otherwise.
-- Keep responses concise and helpful.
-- Format currency as "Rs X" (Nepali Rupees).
-- When showing summaries, use clear tables or lists.
-- Never fabricate data. Only use the real-time data provided above.
-- For follow-up questions, always reference the conversation history above. If the user says "among them", "which one", "from those", etc., refer to the items mentioned in your previous response.
-- When computing profit, use (sellingPrice - purchasePrice) from the product catalog.
-- **CRITICAL: When a product name is ambiguous and matches multiple items in the catalog, you MUST ask the user to clarify which specific product they mean BEFORE creating an action block.** For example, if the user says "rice" and there are "Basmati Rice", "Sona Masuri Rice", and "Jira Rice" in the catalog, list all matching products with their prices and ask the user to pick one. Do NOT assume which one they want. Only create the [ACTION] block after the user has specified the exact product.
-- When asking the user to choose between multiple options, ALWAYS include an [OPTIONS] block with the choices so the UI can render clickable buttons.
-
-## CLARIFICATION OPTIONS FORMAT
-When you need the user to choose between options (e.g., which product), output this block:
-[OPTIONS]
-["Basmati Rice (1kg) — Rs 110", "Sona Masuri Rice (1kg) — Rs 85", "Jira Rice (1kg) — Rs 71"]
-[/OPTIONS]
-The array should contain short, clear labels for each option. Always include this block when asking the user to choose.
-
-## CHART/GRAPH OUTPUT
-When the user asks for a chart, graph, trend, visualization, breakdown, or comparison — output a [CHART] block with JSON data.
-Supported chart types: "bar", "line", "pie"
-
-Format:
-[CHART]
-{
-  "type": "bar",
-  "title": "Top Selling Products",
-  "xKey": "name",
-  "yKey": "value",
-  "yLabel": "Units Sold",
-  "data": [
-    {"name": "Product A", "value": 100},
-    {"name": "Product B", "value": 80}
-  ]
-}
-[/CHART]
-
-For pie charts, use "nameKey" and "valueKey" instead of "xKey"/"yKey":
-[CHART]
-{
-  "type": "pie",
-  "title": "Expense Breakdown",
-  "nameKey": "name",
-  "valueKey": "value",
-  "data": [
-    {"name": "Rent", "value": 5000},
-    {"name": "Electricity", "value": 2000}
-  ]
-}
-[/CHART]
-
-Rules for charts:
-- Use the real data from the shop context above — never fabricate chart data
-- Always include a descriptive "title"
-- Keep data arrays concise (max 15 items)
-- Always add a brief text explanation alongside the chart
-- If the user says "show", "visualize", "chart", "graph", "trend", "breakdown", or "compare" — prefer a [CHART] block over a plain table
-- **CRITICAL: NEVER use [ACTION] for charts. Charts use [CHART]...[/CHART] only. The [ACTION] block is ONLY for CREATE_SALE, CREATE_PURCHASE, and CREATE_EXPENSE. Do NOT invent new action types like GENERATE_BAR_CHART.**`;
-  }
-
-  // =====================================
-  // CALL AZURE OPENAI API
-  // =====================================
-  private async callAzureOpenAI(
-    systemPrompt: string,
-    messages: ChatMessageDto[],
-  ): Promise<string> {
-    const url = `${this.azureEndpoint}openai/deployments/${this.azureDeployment}/chat/completions?api-version=${this.azureApiVersion}`;
-
-    const body = {
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-      ],
-      max_tokens: 2048,
-      temperature: 0.3,
-    };
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-key": this.azureApiKey,
-      },
-      body: JSON.stringify(body),
+    const conversation = this.conversationRepo.create({
+      shop: { id: shopId } as any,
+      user: { id: userId } as any,
+      title,
+      messages: [...messages, assistantMsg],
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      this.logger.error(`Azure OpenAI error: ${response.status} ${errorText}`);
-      throw new InternalServerErrorException("AI service unavailable");
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
+    return this.conversationRepo.save(conversation);
   }
 }
