@@ -26,7 +26,7 @@ const AppDataSource = new DataSource({
         Customer, Sale, SaleItem,
         KhataTransaction, Expense, StockMovement, Purchase, PurchaseItem
     ],
-    synchronize: false,
+    synchronize: true,
     extra: {
         max: 3,
         idleTimeoutMillis: 30000,

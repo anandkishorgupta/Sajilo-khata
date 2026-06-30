@@ -1,7 +1,10 @@
-// src/pos-sessions/pos-session.entity.ts
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, ManyToOne, JoinColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Shop } from '../../shops/entities';
 
@@ -11,27 +14,24 @@ export class PosSession {
   id: number;
 
   @Column({ unique: true })
-  sessionCode: string;   // e.g. "A9X3K2" shown as QR
+  sessionCode: string;
 
   @Column()
   shopId: number;
 
-  @ManyToOne(() => Shop)
+  @ManyToOne(() => Shop, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'shopId' })
   shop: Shop;
 
-  @Column({ nullable: true })
-  laptopSocketId: string | null;
-
-  @Column({ nullable: true })
-  lastScannedProductId: number | null;
-
-  @Column({ default: 'active' })
-  status: 'active' | 'expired';
+ @Column({
+  type: 'varchar',
+  nullable: true,
+})
+laptopSocketId: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column()
-  expiresAt: Date;
 }

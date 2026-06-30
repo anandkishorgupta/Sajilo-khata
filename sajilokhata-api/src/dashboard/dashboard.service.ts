@@ -194,7 +194,7 @@ export class DashboardService {
   }
 
   // =====================================
-  // TOP PRODUCTS
+  // TOP PRODUCTS (top 10 best selling products)
   // =====================================
   async topProducts(shopId: number) {
     const sales = await this.saleRepo.find({

@@ -146,7 +146,7 @@ export class AiAssistantService {
   }
 
   // =====================================
-  // TOOL DEFINITIONS (sent to Azure)
+  // TOOL DEFINITIONS
   // =====================================
   private toolDefinitions() {
     return [

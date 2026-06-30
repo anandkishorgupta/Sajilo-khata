@@ -17,22 +17,17 @@ export class PosSessionsService {
   ) {}
 
   async createSession(shopId: number): Promise<PosSession> {
-    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
     const session = this.repo.create({
       sessionCode: generateCode(),
       shopId,
-      status: 'active',
-      expiresAt,
     });
     return this.repo.save(session);
   }
 
-  async findActiveByCode(sessionCode: string): Promise<PosSession | null> {
+  async findByCode(sessionCode: string): Promise<PosSession | null> {
     return this.repo.findOne({
       where: {
         sessionCode,
-        status: 'active',
-        expiresAt: MoreThan(new Date()),
       },
     });
   }
@@ -41,20 +36,5 @@ export class PosSessionsService {
     await this.repo.update({ sessionCode }, { laptopSocketId: socketId });
   }
 
-  async setLastProduct(sessionCode: string, productId: number | null) {
-    await this.repo.update({ sessionCode }, { lastScannedProductId: productId });
-  }
 
-  async getLastProduct(sessionCode: string): Promise<number | null> {
-    const s = await this.repo.findOne({ where: { sessionCode } });
-    return s?.lastScannedProductId ?? null;
-  }
-
-  @Cron('0 * * * *') // every hour
-  async expireSessions() {
-    await this.repo.update(
-      { status: 'active', expiresAt: MoreThan(new Date()) },
-      { status: 'expired' },
-    );
-  }
 }

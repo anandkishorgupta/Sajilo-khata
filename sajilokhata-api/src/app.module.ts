@@ -26,6 +26,9 @@ import { Shop } from './shops/entities';
 import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
+import { PosSessionsModule } from './pos-sessions/pos-sessions.module';
+import { ScanGateway } from './scan/scan.gateway';
+import { ScanModule } from './scan/scan.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -33,7 +36,7 @@ import { UsersModule } from './users/users.module';
       envFilePath: '.env',
     }),
 
-    TypeOrmModule.forRootAsync({          // ✅ switched to async
+    TypeOrmModule.forRootAsync({          //  switched to async
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
@@ -41,7 +44,7 @@ import { UsersModule } from './users/users.module';
         autoLoadEntities: true,
         synchronize: true,
       }),
-      dataSourceFactory: async (options) => {  // ✅ registers DataSource for @Transactional()
+      dataSourceFactory: async (options) => {  // registers DataSource for @Transactional()
         if (!options) throw new Error('TypeORM DataSource options are undefined');
         const dataSource = await new DataSource(options).initialize();
         return addTransactionalDataSource(dataSource);
@@ -65,12 +68,15 @@ import { UsersModule } from './users/users.module';
     AiAssistantModule,
     PaymentModule,
     TypeOrmModule.forFeature([Shop]),
+    PosSessionsModule,
+    ScanModule,
   ],
   controllers: [AppController],
   providers: [AppService
     ,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: SubscriptionGuard },
+    ScanGateway,
   ],
 })
 export class AppModule { }
