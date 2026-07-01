@@ -131,19 +131,12 @@ export default function BillingPage() {
           Scan with Phone
         </button>
       </div>
-      {showScanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="relative rounded-xl bg-white p-6">
-            <button
-              onClick={() => setShowScanner(false)}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
-            <ScannerPairing />
-          </div>
-        </div>
-      )}
+
+      <ScannerPairing
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+      />
+
       <div className="grid gap-5 lg:grid-cols-[1fr_400px]">
         {/* Product search & grid */}
         <Card>
