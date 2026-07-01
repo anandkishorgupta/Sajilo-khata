@@ -1,0 +1,231 @@
+<!-- socket-test.html -->
+<!doctype html>
+<html>
+  <head>
+    <title>SajiloKhata Scanner Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: monospace;
+        background: #0f0f0f;
+        color: #e0e0e0;
+        padding: 20px;
+      }
+      .panel {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 4px;
+      }
+      button.red {
+        background: #dc2626;
+      }
+      button.green {
+        background: #16a34a;
+      }
+      input {
+        background: #111;
+        color: white;
+        border: 1px solid #444;
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin: 4px;
+        width: 200px;
+      }
+      .log {
+        background: #0a0a0a;
+        padding: 10px;
+        border-radius: 6px;
+        height: 180px;
+        overflow-y: auto;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .log .in {
+        color: #4ade80;
+      }
+      .log .out {
+        color: #60a5fa;
+      }
+      .log .err {
+        color: #f87171;
+      }
+      h3 {
+        margin: 0 0 12px;
+        color: #a0a0a0;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 style="color: #fff">🔌 SajiloKhata Socket.IO Tester</h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+      <!-- LAPTOP PANEL -->
+      <div class="panel">
+        <h3>💻 Laptop (POS)</h3>
+        <input
+          id="l-url"
+          value="http://localhost:3000"
+          placeholder="Backend URL"
+        />
+        <input id="l-session" value="" placeholder="Session code" />
+        <br />
+        <button onclick="laptopConnect()">Connect</button>
+        <button class="red" onclick="laptopDisconnect()">Disconnect</button>
+        <br /><br />
+        <button class="green" onclick="registerLaptop()">
+          Register Laptop
+        </button>
+        <div class="log" id="laptop-log"></div>
+      </div>
+
+      <!-- PHONE PANEL -->
+      <div class="panel">
+        <h3>📱 Phone (Scanner)</h3>
+        <input
+          id="p-url"
+          value="http://localhost:3000"
+          placeholder="Backend URL"
+        />
+        <input id="p-session" value="" placeholder="Session code" />
+        <br />
+        <button onclick="phoneConnect()">Connect</button>
+        <button class="red" onclick="phoneDisconnect()">Disconnect</button>
+        <br /><br />
+        <button class="green" onclick="joinSession()">Join Session</button>
+        <br /><br />
+        <input id="barcode" value="8901234567890" placeholder="Barcode" />
+        <button onclick="scanProduct()">Scan Product</button>
+        <button class="red" onclick="undoScan()">Undo</button>
+        <div class="log" id="phone-log"></div>
+      </div>
+    </div>
+
+    <script>
+      let laptopSocket = null;
+      let phoneSocket = null;
+
+      function log(panelId, type, msg) {
+        const el = document.getElementById(panelId);
+        const line = document.createElement("div");
+        line.className = type;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        el.appendChild(line);
+        el.scrollTop = el.scrollHeight;
+      }
+
+      // ── LAPTOP ──────────────────────────────────────────
+      function laptopConnect() {
+        const url = document.getElementById("l-url").value;
+        laptopSocket = io(url + "/scan", { transports: ["websocket"] });
+
+        laptopSocket.on("connect", () =>
+          log("laptop-log", "in", "✅ Connected: " + laptopSocket.id),
+        );
+        laptopSocket.on("disconnect", () =>
+          log("laptop-log", "err", "❌ Disconnected"),
+        );
+        laptopSocket.on("scan:registered", (d) =>
+          log("laptop-log", "in", "scan:registered → " + JSON.stringify(d)),
+        );
+        laptopSocket.on("scan:error", (d) =>
+          log("laptop-log", "err", "scan:error → " + JSON.stringify(d)),
+        );
+
+        // This is the key event — product found, laptop adds to cart and ACKs
+        laptopSocket.on("cart:product-found", ({ product, phoneSocketId }) => {
+          log(
+            "laptop-log",
+            "in",
+            "cart:product-found → " + JSON.stringify(product),
+          );
+
+          // Simulate adding to cart and sending ACK
+          laptopSocket.emit("scan:accepted", {
+            phoneSocketId,
+            product,
+            quantity: 1,
+            cartTotal: product.sellingPrice,
+            itemCount: 1,
+          });
+          log("laptop-log", "out", "scan:accepted → ACK sent to phone");
+        });
+
+        laptopSocket.on("cart:undo", (d) =>
+          log("laptop-log", "in", "cart:undo → " + JSON.stringify(d)),
+        );
+      }
+
+      function laptopDisconnect() {
+        laptopSocket?.disconnect();
+      }
+
+      function registerLaptop() {
+        const code = document.getElementById("l-session").value;
+        laptopSocket.emit("scan:register-laptop", { sessionCode: code });
+        log("laptop-log", "out", "scan:register-laptop → " + code);
+      }
+
+      // ── PHONE ───────────────────────────────────────────
+      function phoneConnect() {
+        const url = document.getElementById("p-url").value;
+        phoneSocket = io(url + "/scan", { transports: ["websocket"] });
+
+        phoneSocket.on("connect", () =>
+          log("phone-log", "in", "✅ Connected: " + phoneSocket.id),
+        );
+        phoneSocket.on("disconnect", () =>
+          log("phone-log", "err", "❌ Disconnected"),
+        );
+        phoneSocket.on("scan:joined", (d) =>
+          log("phone-log", "in", "scan:joined → " + JSON.stringify(d)),
+        );
+        phoneSocket.on("scan:confirmed", (d) =>
+          log("phone-log", "in", "✅ scan:confirmed → " + JSON.stringify(d)),
+        );
+        phoneSocket.on("scan:error", (d) =>
+          log("phone-log", "err", "❌ scan:error → " + JSON.stringify(d)),
+        );
+        phoneSocket.on("scan:laptop-disconnected", () =>
+          log("phone-log", "err", "⚠️ Laptop disconnected"),
+        );
+      }
+
+      function phoneDisconnect() {
+        phoneSocket?.disconnect();
+      }
+
+      function joinSession() {
+        const code = document.getElementById("p-session").value;
+        phoneSocket.emit("scan:join", { sessionCode: code });
+        log("phone-log", "out", "scan:join → " + code);
+      }
+
+      function scanProduct() {
+        const barcode = document.getElementById("barcode").value;
+        const code = document.getElementById("p-session").value;
+        phoneSocket.emit("scan:product", { barcode, sessionCode: code });
+        log("phone-log", "out", "scan:product → barcode: " + barcode);
+      }
+
+      function undoScan() {
+        const code = document.getElementById("p-session").value;
+        phoneSocket.emit("scan:undo", { sessionCode: code });
+        log("phone-log", "out", "scan:undo → " + code);
+      }
+    </script>
+  </body>
+</html>

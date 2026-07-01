@@ -9,8 +9,10 @@ import { useState } from "react"
 import type { RootState } from "@/store/store"
 import { useDispatch, useSelector } from "react-redux"
 
+import { ScannerPairing } from "@/components/scan/ScannerPairing"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useProducts } from "@/query/useInventory"
+import { ScanLine } from "lucide-react" // or any icon you're using
 
 import {
   addItem,
@@ -43,7 +45,7 @@ type CompletedSale = {
 export default function BillingPage() {
   const dispatch = useDispatch()
   const cart = useSelector((state: RootState) => state.cart.items)
-
+  const [showScanner, setShowScanner] = useState(false)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 400)
 
@@ -64,7 +66,6 @@ export default function BillingPage() {
     search: debouncedSearch,
     limit: 1000,
   })
-  console.log("data...........", data)
 
   const products = data?.products ?? data ?? []
 
@@ -120,6 +121,29 @@ export default function BillingPage() {
 
   return (
     <AppShell title="New Sale" subtitle="POS Billing System">
+      {/* Toolbar row — outside the grid */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setShowScanner(true)}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white"
+        >
+          <ScanLine size={16} />
+          Scan with Phone
+        </button>
+      </div>
+      {showScanner && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="relative rounded-xl bg-white p-6">
+            <button
+              onClick={() => setShowScanner(false)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+            <ScannerPairing />
+          </div>
+        </div>
+      )}
       <div className="grid gap-5 lg:grid-cols-[1fr_400px]">
         {/* Product search & grid */}
         <Card>
