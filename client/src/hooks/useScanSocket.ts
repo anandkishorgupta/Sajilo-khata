@@ -57,16 +57,10 @@ export function useScanSocket(sessionCode: string | null) {
                 price: product.sellingPrice,
             }));
 
-            // Calculate after dispatch
-            const cartTotal = cartItemsRef.current.reduce(
-                (sum, i) => sum + i.price * i.qty, 0
-            ) + product.sellingPrice;
-
             socket.emit('scan:accepted', {
                 phoneSocketId,
                 product,
                 quantity: 1,
-                cartTotal,
                 itemCount: cartItemsRef.current.length + 1,
             });
         });

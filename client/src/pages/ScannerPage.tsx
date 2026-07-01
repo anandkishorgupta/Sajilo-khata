@@ -187,6 +187,7 @@ export default function ScannerPage() {
   // ── Sends a scan to the server
   const emitScan = useCallback(
     (barcode: string) => {
+      console.log("PHONE EMIT", barcode, Date.now())
       socketRef.current?.emit("scan:product", {
         barcode,
         sessionCode,
@@ -470,15 +471,6 @@ export default function ScannerPage() {
     }
   }
 
-  // ─── Reset for new customer / billing complete ────────────────────
-  function handleResetSession() {
-    setScannedCount(0)
-    setResult(null)
-    // Requires a corresponding @SubscribeMessage('scan:reset-session') on the
-    // gateway that clears the server-side cart state for this sessionCode.
-    socketRef.current?.emit("scan:reset-session", { sessionCode })
-  }
-
   return (
     <div className="flex h-screen flex-col bg-gray-950 text-white select-none">
       {/* Status bar */}
@@ -643,11 +635,10 @@ export default function ScannerPage() {
         </button>
 
         <button
-          onClick={handleResetSession}
-          disabled={scannedCount === 0}
+          disabled
           className="w-full rounded-xl bg-gray-800 py-3 text-sm font-medium text-gray-200 active:bg-gray-700 disabled:opacity-40"
         >
-          ✓ Complete billing / New customer
+          Sajilo Khata POS
         </button>
       </div>
     </div>
