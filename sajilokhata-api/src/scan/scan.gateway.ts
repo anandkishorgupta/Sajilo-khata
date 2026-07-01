@@ -1,3 +1,4 @@
+// src/scan/scan.gateway.ts
 import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
@@ -11,21 +12,6 @@ import { Server, Socket } from 'socket.io';
 import { PosSessionsService } from '../pos-sessions/pos-sessions.service';
 import { ProductsService } from '../products/products.service';
 
-/*
-const students = new Map();
-students.set("101", "Anand");
-students.set("102", "Ram");
-students.set("103", "Hari");
-
-Key        Value
---------------------
-101   →    Anand
-102   →    Ram
-103   →    Hari
-
-*/
-
-
 // Map socketId → sessionCode (for cleanup on disconnect)
 const socketToSession = new Map<string, string>();
 // Map sessionCode → phoneSocketId (latest phone in session)
@@ -35,10 +21,8 @@ const sessionToPhone = new Map<string, string>();
   cors: { origin: '*' },
   namespace: '/scan',
 })
-// create a socket server , with namespace /scan
-// Only clients connecting to io("/scan") can communicate with this gateway.
 export class ScanGateway implements OnGatewayDisconnect {
-  @WebSocketServer() server: Server; // Inject the already-created Socket.IO server into this property.
+  @WebSocketServer() server: Server;
   private readonly logger = new Logger(ScanGateway.name);
 
   constructor(
@@ -50,7 +34,7 @@ export class ScanGateway implements OnGatewayDisconnect {
   @SubscribeMessage('scan:register-laptop')
   async handleRegisterLaptop(
     @MessageBody() { sessionCode }: { sessionCode: string },
-    @ConnectedSocket() client: Socket, // client is the socket object representing the laptop's connection.
+    @ConnectedSocket() client: Socket,
   ) {
     const session = await this.sessions.findByCode(sessionCode);
     if (!session) {
@@ -59,7 +43,7 @@ export class ScanGateway implements OnGatewayDisconnect {
     }
 
     await this.sessions.setLaptopSocket(sessionCode, client.id);
-    client.join(`session:${sessionCode}`);  // Think of it like a WhatsApp Group (Room in socket)
+    client.join(`session:${sessionCode}`);
     socketToSession.set(client.id, sessionCode);
 
     client.emit('scan:registered', { sessionCode });
@@ -78,9 +62,7 @@ export class ScanGateway implements OnGatewayDisconnect {
     @MessageBody() { sessionCode }: { sessionCode: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('[gateway] scan:join received, sessionCode:', sessionCode);
     const session = await this.sessions.findByCode(sessionCode);
-    console.log('[gateway] session found:', session);
     if (!session) {
       client.emit('scan:error', { message: 'Invalid or expired session' });
       return;
@@ -90,7 +72,7 @@ export class ScanGateway implements OnGatewayDisconnect {
     socketToSession.set(client.id, sessionCode);
     sessionToPhone.set(sessionCode, client.id);
 
-    // ✅ Include actual laptop presence in the response
+    // Include actual laptop presence in the response
     client.emit('scan:joined', {
       sessionCode,
       shopId: session.shopId,
@@ -104,9 +86,13 @@ export class ScanGateway implements OnGatewayDisconnect {
   // ─── Phone scans barcode ─────────────────────────────────────────
   @SubscribeMessage('scan:product')
   async handleScan(
-    @MessageBody() { barcode, sessionCode }: { barcode: string; sessionCode: string },
+    @MessageBody() { barcode, sessionCode }: {
+      barcode: string;
+      sessionCode: string;
+    },
     @ConnectedSocket() phone: Socket,
   ) {
+    console.log(`Scan request: ${barcode} in session ${sessionCode}`);
     const session = await this.sessions.findByCode(sessionCode);
     if (!session || !session.laptopSocketId) {
       phone.emit('scan:error', {
@@ -119,7 +105,10 @@ export class ScanGateway implements OnGatewayDisconnect {
     const product = await this.products.findByBarcode(barcode, session.shopId);
 
     if (!product) {
-      phone.emit('scan:error', { barcode, message: 'Product not found' });
+      phone.emit('scan:error', {
+        barcode,
+        message: 'Product not found'
+      });
       return;
     }
 
@@ -130,11 +119,13 @@ export class ScanGateway implements OnGatewayDisconnect {
       });
       return;
     }
-    // send to this laptop
+
+    // Send to this laptop
     this.server.to(session.laptopSocketId).emit('cart:product-found', {
       product: {
         id: product.id,
         name: product.name,
+        barcode: product.barcode,
         sellingPrice: product.sellingPrice,
         stock: product.stock,
       },
@@ -143,11 +134,11 @@ export class ScanGateway implements OnGatewayDisconnect {
   }
 
   // ─── Laptop ACKs after updating cart ────────────────────────────
-  @SubscribeMessage('cart:item-added')
+  @SubscribeMessage('scan:accepted')
   handleCartAck(
     @MessageBody() payload: {
       phoneSocketId: string;
-      product: { id: number; name: string; price: number };
+      product: { id: number; name: string; sellingPrice: number; barcode: string };
       quantity: number;
       cartTotal: number;
       itemCount: number;
@@ -158,8 +149,24 @@ export class ScanGateway implements OnGatewayDisconnect {
       quantity: payload.quantity,
       cartTotal: payload.cartTotal,
       itemCount: payload.itemCount,
+      barcode: payload.product.barcode, // Add barcode for tracking
     });
   }
+
+  @SubscribeMessage("scan:duplicate")
+  handleDuplicate(
+    @MessageBody()
+    payload: {
+      phoneSocketId: string;
+      product: { id: number; name: string; barcode: string };
+    },
+  ) {
+    this.server.to(payload.phoneSocketId).emit("scan:duplicate", {
+      barcode: payload.product.barcode,
+      message: "Already in cart. Increase quantity from the laptop.",
+    });
+  }
+
 
   // ─── Cleanup on disconnect ───────────────────────────────────────
   async handleDisconnect(client: Socket) {
