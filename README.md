@@ -520,3 +520,14 @@ pnpm run dev
 - SMS reminders for overdue Khata balances
 - Advanced sales analytics dashboard
 - Supplier management module
+
+
+## License
+
+Copyright © 2026 Anand Gupta.
+
+This project was built entirely from scratch by me and is shared for educational and portfolio purposes.
+
+Commercial use, resale, redistribution, or claiming this work as your own is prohibited without prior written permission.
+
+See the [LICENSE](LICENSE) file for full terms.
