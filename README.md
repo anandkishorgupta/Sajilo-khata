@@ -13,6 +13,7 @@
 | Password | demo1234 |
 
 ---
+
 ## 🎥 Full Project Demo
 
 [![Sajilo Khata Demo](https://img.youtube.com/vi/wdGsFsxE5hs/maxresdefault.jpg)](https://youtu.be/wdGsFsxE5hs)
@@ -33,6 +34,7 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 - JWT authentication & subscription guards
 - Inventory & stock management
 - Sales, purchases & customer credit (Khata)
+- Phone-based barcode scanner using Socket.IO (no dedicated scanner required)
 - Khalti payment integration
 - AI-powered business assistant
 - PDF invoice generation with Puppeteer
@@ -116,6 +118,7 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 | **Expenses**       | Daily expense recording with categories                                         |
 | **Subscription**   | Trial/Pro plans enforced via global guard, Khalti payment integration           |
 | **AI Assistant**   | Ask natural language questions about your sales and inventory (DeepSeek API)    |
+| **Mobile Barcode Scanner** | Turn any Android phone into a wireless barcode scanner using Socket.IO for real-time POS billing without dedicated scanner hardware |
 
 ---
 
@@ -193,6 +196,8 @@ A few things I'm particularly happy with in this project:
 - **Puppeteer PDF invoices** — replaced an initial PDFKit approach with a Puppeteer HTML-to-PDF pipeline for much richer invoice layouts.
 - **AI business assistant** — shop owners can ask things like _"which product sold the most this week?"_ and get a natural language answer backed by real shop data passed as context.
 - **Multi-tenancy** — every table has a `shop_id` foreign key. Guards extract the shop from the JWT and scope all queries automatically.
+
+- **Phone-based barcode scanner** — built a real-time barcode scanning system using Socket.IO that pairs a mobile phone with the POS. The phone camera scans product barcodes and instantly updates the billing screen without requiring dedicated barcode scanner hardware.
 
 ---
 
