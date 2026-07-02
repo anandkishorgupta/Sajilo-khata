@@ -92,7 +92,7 @@ export class ScanGateway implements OnGatewayDisconnect {
     },
     @ConnectedSocket() phone: Socket,
   ) {
-    console.log(`Scan request: ${barcode} in session ${sessionCode}`);
+
     const session = await this.sessions.findByCode(sessionCode);
     if (!session || !session.laptopSocketId) {
       phone.emit('scan:error', {

@@ -76,7 +76,7 @@ import { ScanModule } from './scan/scan.module';
     ,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: SubscriptionGuard },
-    ScanGateway,
+    // ScanGateway,
   ],
 })
 export class AppModule { }

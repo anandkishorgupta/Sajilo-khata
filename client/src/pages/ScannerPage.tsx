@@ -14,9 +14,8 @@ declare global {
 type ConfirmedResult = {
   status: "confirmed"
   barcode: string
-  product: { id: number; name: string; price: number }
+  product: { id: number; name: string; psellingPice: number }
   quantity: number
-  cartTotal: number
 }
 type ErrorResult = {
   status: "error"
@@ -171,6 +170,7 @@ export default function ScannerPage() {
   const waitingForResponseRef = useRef(false)
 
   const showResult = useCallback((r: ScanResult, duration = 3000) => {
+    console.log("PHONE SHOW RESULT", r)
     setResult(r)
     clearTimeout(resultTimerRef.current)
     resultTimerRef.current = setTimeout(() => setResult(null), duration)
@@ -259,9 +259,11 @@ export default function ScannerPage() {
       reconnection: true,
       reconnectionDelay: 1000,
     })
+    console.log("Created socket", socket.id)
     socketRef.current = socket
 
     socket.on("connect", () => {
+      console.log("PHONE CONNECTED", socket.id)
       socket.emit("scan:join", { sessionCode })
     })
 
@@ -417,6 +419,7 @@ export default function ScannerPage() {
   // ── Runs ONE decode attempt on the current frame. This is the only
   // place decoding happens now — everything else is just camera preview.
   async function handleManualScan() {
+    console.log("handleManualScan", Date.now())
     if (isScanning || cameraState !== "active") return
     setIsScanning(true)
 
@@ -575,11 +578,9 @@ export default function ScannerPage() {
               </div>
               <div className="mt-1 flex justify-between text-sm opacity-80">
                 <span>Qty: {result.quantity}</span>
-                <span>Rs. {result.product.price}</span>
+                <span>Rs. {result.product.sellingPrice}</span>
               </div>
-              <div className="mt-0.5 text-xs opacity-60">
-                Cart total: Rs. {result.cartTotal}
-              </div>
+              
             </>
           )}
 
