@@ -12,6 +12,7 @@ import KhataPage from "@/pages/KhataPage"
 import SalesPage from "@/pages/SalesPage"
 
 import AnalyticsPage from "@/pages/AnalyticsPage"
+import ScannerPage from '@/pages/ScannerPage';
 import BillingPage from "@/pages/BillingPage"
 import CategoriesPage from "@/pages/CategoriesPage"
 import CustomersPage from "@/pages/CustomersPage"
@@ -48,7 +49,7 @@ export const router = createBrowserRouter([
       { path: "/payment/verify", element: <PaymentVerifyPage /> },
     ],
   },
-
+{ path: "/scan", element: <ScannerPage /> },
   {
     element: (
       <ProtectedRoute>
@@ -59,7 +60,6 @@ export const router = createBrowserRouter([
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/dashboard/inventory", element: <InventoryPage /> },
 
-      // ✅ ADD THIS
       { path: "/dashboard/billing", element: <BillingPage /> },
       { path: "/dashboard/sales", element: <SalesPage /> },
       { path: "/dashboard/customers", element: <CustomersPage /> },

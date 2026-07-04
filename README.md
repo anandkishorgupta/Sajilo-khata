@@ -13,16 +13,6 @@
 | Password | demo1234 |
 
 ---
-## Highlights
-
-- Multi-tenant SaaS architecture
-- JWT authentication & subscription guards
-- Inventory & stock management
-- Sales, purchases & customer credit (Khata)
-- **Phone-based barcode scanner** using Socket.IO (no dedicated scanner required)
-- Khalti payment integration
-- AI-powered business assistant
-- PDF invoice generation with Puppeteer
 
 ## 🎥 Full Project Demo
 
@@ -38,6 +28,16 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 
 ---
 
+## Highlights
+
+- Multi-tenant SaaS architecture
+- JWT authentication & subscription guards
+- Inventory & stock management
+- Sales, purchases & customer credit (Khata)
+- Phone-based barcode scanner using Socket.IO (no dedicated scanner required)
+- Khalti payment integration
+- AI-powered business assistant
+- PDF invoice generation with Puppeteer
 
 ## Screenshots
 
@@ -458,13 +458,3 @@ pnpm run dev
 - SMS reminders for overdue Khata balances
 - Advanced sales analytics dashboard
 - Supplier management module
-
-## License
-
-Copyright © 2026 Anand Gupta.
-
-This project was built entirely from scratch by me and is shared for educational and portfolio purposes.
-
-Commercial use, resale, redistribution, or claiming this work as your own is prohibited without prior written permission.
-
-See the [LICENSE](LICENSE) file for full terms.

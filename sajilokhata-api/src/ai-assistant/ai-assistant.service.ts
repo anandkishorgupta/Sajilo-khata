@@ -52,28 +52,9 @@ export class AiAssistantService {
       apiMessages.push(response.message);
 
       // Execute all tool calls in parallel
-      const toolResults = await Promise.all(
-        toolCalls.map(async (tc) => {
-          const args = JSON.parse(tc.function.arguments || "{}");
-          this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
-          const result = await this.executeTool(tc.function.name, args, shopId, userId);
-          return {
-            role: "tool" as const,
-            tool_call_id: tc.id,
-            content: JSON.stringify(result),
-          };
-        }),
-      );
       // const toolResults = await Promise.all(
       //   toolCalls.map(async (tc) => {
-      //     let args: any = {};
-      //     try {
-      //       const parsed = JSON.parse(tc.function.arguments || "{}");
-      //       args = parsed && typeof parsed === "object" ? parsed : {};
-      //     } catch {
-      //       this.logger.warn(`Failed to parse args for ${tc.function.name}: ${tc.function.arguments}`);
-      //       args = {};
-      //     }
+      //     const args = JSON.parse(tc.function.arguments || "{}");
       //     this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
       //     const result = await this.executeTool(tc.function.name, args, shopId, userId);
       //     return {
@@ -83,6 +64,25 @@ export class AiAssistantService {
       //     };
       //   }),
       // );
+      const toolResults = await Promise.all(
+        toolCalls.map(async (tc) => {
+          let args: any = {};
+          try {
+            const parsed = JSON.parse(tc.function.arguments || "{}");
+            args = parsed && typeof parsed === "object" ? parsed : {};
+          } catch {
+            this.logger.warn(`Failed to parse args for ${tc.function.name}: ${tc.function.arguments}`);
+            args = {};
+          }
+          this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
+          const result = await this.executeTool(tc.function.name, args, shopId, userId);
+          return {
+            role: "tool" as const,
+            tool_call_id: tc.id,
+            content: JSON.stringify(result),
+          };
+        }),
+      );
       apiMessages.push(...toolResults);
       response = await this.azureService.call(apiMessages, this.toolDefinitions());
     }
@@ -146,7 +146,7 @@ export class AiAssistantService {
   }
 
   // =====================================
-  // TOOL DEFINITIONS (sent to Azure)
+  // TOOL DEFINITIONS
   // =====================================
   private toolDefinitions() {
     return [
@@ -390,20 +390,44 @@ export class AiAssistantService {
   // PARSE CHART FROM TEXT
   // Only thing left to parse — no more [ACTION] regex
   // =====================================
+  // private parseChartFromText(text: string): { message: string; chart: any | null } {
+  //   const chartMatch = text.match(/```chart\s*([\s\S]*?)```/);
+  //   if (chartMatch) {
+  //     try {
+  //       const chart = JSON.parse(chartMatch[1].trim());
+  //       const message = text.replace(/```chart[\s\S]*?```/, "").trim();
+  //       return { message, chart };
+  //     } catch {
+  //       // malformed chart JSON — just return text
+  //     }
+  //   }
+  //   return { message: text, chart: null };
+  // }
   private parseChartFromText(text: string): { message: string; chart: any | null } {
-    const chartMatch = text.match(/```chart\s*([\s\S]*?)```/);
-    if (chartMatch) {
+    // Try fenced ```chart block first
+    let match = text.match(/```chart\s*([\s\S]*?)```/);
+    let raw = match?.[1];
+    let fullMatch = match?.[0];
+
+    // Fallback: <chart>...</chart> tags
+    if (!raw) {
+      match = text.match(/<chart>\s*([\s\S]*?)\s*<\/chart>/);
+      raw = match?.[1];
+      fullMatch = match?.[0];
+    }
+
+    if (raw && fullMatch) {
       try {
-        const chart = JSON.parse(chartMatch[1].trim());
-        const message = text.replace(/```chart[\s\S]*?```/, "").trim();
+        const chart = JSON.parse(raw.trim());
+        const message = text.replace(fullMatch, "").trim();
         return { message, chart };
       } catch {
-        // malformed chart JSON — just return text
+        this.logger.warn(`Malformed chart JSON: ${raw}`);
       }
     }
+
     return { message: text, chart: null };
   }
-
   // =====================================
   // CONVERSATION CRUD
   // =====================================

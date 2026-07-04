@@ -210,4 +210,17 @@ export class ProductsService {
       .andWhere('product.stock <= product.lowStockLimit')
       .getMany();
   }
+
+
+  async findByBarcode(barcode: string, shopId: number) {
+    const product = await this.productRepo.findOne({
+      where: {
+        barcode,
+        shop: {
+          id: shopId,
+        },
+      },
+    });
+    return product
+  }
 }
