@@ -6,8 +6,10 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import type{ Response } from "express";
 
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -28,6 +30,53 @@ export class AiAssistantController {
       user.userId,
       dto.conversationId,
     );
+  }
+
+  @Post("chat-stream")
+  async chatStream(
+    @Body() dto: ChatRequestDto,
+    @CurrentUser() user: any,
+    @Res() res: Response,
+  ) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+
+    try {
+      const result = this.aiAssistantService.chatStream(
+        dto.messages,
+        user.shopId,
+        user.userId,
+      );
+
+      let fullText = "";
+      for await (const chunk of result.textStream) {
+        fullText += chunk;
+        res.write(`data: ${JSON.stringify({ type: "text", text: chunk })}\n\n`);
+      }
+
+      const { conversationId, chart } =
+        await this.aiAssistantService.finalizeChat(
+          dto.messages,
+          fullText,
+          user.shopId,
+          user.userId,
+          dto.conversationId,
+        );
+
+      res.write(
+        `data: ${JSON.stringify({ type: "done", conversationId, chart })}\n\n`,
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Stream failed";
+      res.write(
+        `data: ${JSON.stringify({ type: "error", message })}\n\n`,
+      );
+    } finally {
+      res.end();
+    }
   }
 
   @Get("conversations")

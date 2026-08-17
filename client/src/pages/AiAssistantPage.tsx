@@ -8,7 +8,7 @@ import type {
   Conversation,
 } from "@/api/ai-assistant"
 import {
-  sendChatMessage,
+  sendChatMessageStream,
   confirmAction,
   getConversations,
   getConversation,
@@ -162,42 +162,70 @@ export default function AiAssistantPage() {
     setLoading(true)
 
     try {
-      // Build conversation history for the API (without UI-specific fields)
       const apiMessages: ChatMessage[] = updatedMessages.map((m) => ({
         role: m.role,
         content: m.content,
       }))
 
-      const res = await sendChatMessage(apiMessages, conversationId)
-      const data = res.data?.data ?? res.data
+      let assistantContent = ""
+      let doneConversationId: number | undefined
+      let doneChart: ChartData | null = null
 
-      // Track conversation ID
-      if (data.conversationId) {
-        setConversationId(data.conversationId)
+      // Add empty assistant message placeholder
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }])
+
+      for await (const event of sendChatMessageStream(apiMessages, conversationId)) {
+        if (event.type === "text") {
+          assistantContent += event.text
+          setMessages((prev) => {
+            const updated = [...prev]
+            updated[updated.length - 1] = {
+              role: "assistant",
+              content: assistantContent,
+            }
+            return updated
+          })
+        } else if (event.type === "done") {
+          doneConversationId = event.conversationId
+          doneChart = event.chart
+        } else if (event.type === "error") {
+          throw new Error(event.message)
+        }
       }
 
-      const assistantMessage: UIMessage = {
-        role: "assistant",
-        content: data.message,
-        pendingAction: data.pendingAction,
-        actionStatus: data.pendingAction ? "pending" : undefined,
-        options: data.options,
-        chart: data.chart,
+      // Finalize with chart data if present
+      if (doneChart) {
+        setMessages((prev) => {
+          const updated = [...prev]
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: assistantContent,
+            chart: doneChart,
+          }
+          return updated
+        })
       }
 
-      setMessages((prev) => [...prev, assistantMessage])
+      if (doneConversationId) {
+        setConversationId(doneConversationId)
+      }
 
-      // Refresh conversation list
       loadConversations()
     } catch {
       toast.error("Failed to get AI response")
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, I encountered an error. Please try again.",
-        },
-      ])
+      setMessages((prev) => {
+        // Remove empty placeholder if present
+        const filtered = prev.filter(
+          (m) => !(m.role === "assistant" && m.content === ""),
+        )
+        return [
+          ...filtered,
+          {
+            role: "assistant",
+            content: "Sorry, I encountered an error. Please try again.",
+          },
+        ]
+      })
     } finally {
       setLoading(false)
     }

@@ -12,6 +12,7 @@ import TopProducts        from "@/components/dashboard/TopProducts";
 import ExpenseBreakdown   from "@/components/dashboard/ExpenseBreakdown";
 import InventoryStatus    from "@/components/dashboard/InventoryStatus";
 import StatsRow from "@/components/dashboard/StatsRow";
+import AiInsightsCard from "@/components/dashboard/AiInsightsCard";
 import { fetchProfile } from "@/components/dashboard/data";
 
 export default function DashboardPage() {
@@ -57,6 +58,11 @@ export default function DashboardPage() {
       {/* Stats */}
       <div className="mt-4">
         <StatsRow />
+      </div>
+
+      {/* AI Insights */}
+      <div className="mt-4">
+        <AiInsightsCard />
       </div>
 
       {/* Revenue + Payment Methods */}

@@ -93,3 +93,6 @@ export const fetchInventoryStatus = () =>
 
 export const fetchProfile = () =>
   api.get<{ data: { name: string } }>("/users/profile").then((r) => r.data.data)
+
+export const fetchAiInsights = () =>
+  api.get<{ data: { insight: string } }>("/dashboard/ai-insights").then((r) => r.data.data)

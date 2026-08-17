@@ -7,12 +7,14 @@ import {
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 
 import { DashboardService } from "./dashboard.service";
+import { DashboardInsightsService } from "./dashboard-insights.service";
 
 @Controller("dashboard")
 // @UseGuards(JwtAuthGuard)
 export class DashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
+    private readonly insightsService: DashboardInsightsService,
   ) { }
 
   // =====================================
@@ -118,5 +120,13 @@ export class DashboardController {
   @Get("inventory-status")
   inventoryStatus(@CurrentUser() user: any) {
     return this.dashboardService.inventoryStatus(user.shopId);
+  }
+
+  // =====================================
+  // AI INSIGHTS
+  // =====================================
+  @Get("ai-insights")
+  aiInsights(@CurrentUser() user: any) {
+    return this.insightsService.getInsights(user.shopId);
   }
 }

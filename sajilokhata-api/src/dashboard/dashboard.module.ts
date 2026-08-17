@@ -4,6 +4,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 
 import { DashboardController } from "./dashboard.controller";
 import { DashboardService } from "./dashboard.service";
+import { DashboardInsightsService } from "./dashboard-insights.service";
+import { AiAssistantModule } from "../ai-assistant/ai-assistant.module";
 
 import { Expense } from "../expenses/entities";
 import { KhataTransaction } from "../khata-transactions/entities";
@@ -20,12 +22,13 @@ import { Sale } from "../sales/entities";
       Product,
       KhataTransaction,
     ]),
+    AiAssistantModule,
   ],
 
   controllers: [
     DashboardController,
   ],
 
-  providers: [DashboardService],
+  providers: [DashboardService, DashboardInsightsService],
 })
 export class DashboardModule { }

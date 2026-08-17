@@ -117,7 +117,7 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 | **Customer Khata** | Credit sales, payment collection, live outstanding balance per customer         |
 | **Expenses**       | Daily expense recording with categories                                         |
 | **Subscription**   | Trial/Pro plans enforced via global guard, Khalti payment integration           |
-| **AI Assistant**   | Ask natural language questions about your sales and inventory (DeepSeek API)    |
+| **AI Assistant**   | Ask natural language questions about your sales and inventory (HuggingFace / Meta Llama)    |
 | **Mobile Barcode Scanner** | Turn any Android phone into a wireless barcode scanner using Socket.IO for real-time POS billing without dedicated scanner hardware |
 
 ---
@@ -149,7 +149,7 @@ Most small shops in Nepal still track credit and sales in paper notebooks. I wan
 | Backend  | Railway               |
 | Database | Supabase (PostgreSQL) |
 | Payments | Khalti                |
-| AI       | DeepSeek API          |
+| AI       | HuggingFace / Meta Llama          |
 
 ---
 
@@ -173,7 +173,7 @@ graph LR
 
     subgraph External["External Services"]
         KHALTI["Khalti\nPayment Gateway"]
-        DEEPSEEK["DeepSeek\nAI API"]
+        HF["HuggingFace\nMeta Llama"]
         IMAGEKIT["ImageKit\nCDN"]
     end
 
@@ -428,7 +428,7 @@ erDiagram
 - Node.js 18+
 - PostgreSQL
 - Khalti test credentials
-- DeepSeek API key
+- HuggingFace API key
 
 ### Backend
 
@@ -436,7 +436,7 @@ erDiagram
 git clone https://github.com/anandkishorgupta/Sajilo-khata
 cd sajilokhata-api
 pnpm install
-cp .env   # fill in your DB, JWT, Khalti, DeepSeek keys
+cp .env   # fill in your DB, JWT, Khalti, HuggingFace keys
 pnpm run start:dev
 ```
 

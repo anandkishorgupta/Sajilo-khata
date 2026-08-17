@@ -1,23 +1,25 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { generateText, stepCountIs, streamText, tool } from 'ai';
+import { z } from 'zod';
 
-import { ChatMessageDto } from "./dto";
-import { AiConversation } from "./entities";
-import { AzureOpenAiService } from "./llm/azure.service";
-import { SYSTEM_PROMPT } from "./prompts/system.prompt";
-import { ExpenseTool } from "./tools/expense.tool";
-import { InventoryTool } from "./tools/inventory.tool";
-import { KhataTool } from "./tools/khata.tool";
-import { PurchaseTool } from "./tools/purchase.tool";
-import { SalesTool } from "./tools/sales.tool";
+import { ChatMessageDto } from './dto';
+import { AiConversation } from './entities';
+import { AiSdkService } from './llm/ai-sdk.service';
+import { SYSTEM_PROMPT } from './prompts/system.prompt';
+import { ExpenseTool } from './tools/expense.tool';
+import { InventoryTool } from './tools/inventory.tool';
+import { KhataTool } from './tools/khata.tool';
+import { PurchaseTool } from './tools/purchase.tool';
+import { SalesTool } from './tools/sales.tool';
 
 @Injectable()
 export class AiAssistantService {
   private readonly logger = new Logger(AiAssistantService.name);
 
   constructor(
-    private azureService: AzureOpenAiService,
+    private aiSdkService: AiSdkService,
     private salesTool: SalesTool,
     private expenseTool: ExpenseTool,
     private inventoryTool: InventoryTool,
@@ -26,10 +28,11 @@ export class AiAssistantService {
 
     @InjectRepository(AiConversation)
     private conversationRepo: Repository<AiConversation>,
-  ) { }
+  ) {}
 
   // =====================================
   // CHAT — agentic tool-calling loop
+  // (Vercel AI SDK handles the loop via stopWhen)
   // =====================================
   async chat(
     messages: ChatMessageDto[],
@@ -37,58 +40,19 @@ export class AiAssistantService {
     userId: number,
     conversationId?: number,
   ) {
-    const apiMessages: any[] = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
-    ];
+    const result = await generateText({
+      model: this.aiSdkService.getModel(),
+      system: SYSTEM_PROMPT,
+      messages: messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      tools: this.toolDefinitions(shopId, userId),
+      stopWhen: stepCountIs(10),
+      temperature: 0.3,
+    });
 
-    let response = await this.azureService.call(apiMessages, this.toolDefinitions());
-
-    // Agentic loop — keep going until Azure stops calling tools
-    while (response.finish_reason === "tool_calls") {
-      const toolCalls: any[] = response.message.tool_calls ?? [];
-
-      // Append assistant message with tool_calls to history
-      apiMessages.push(response.message);
-
-      // Execute all tool calls in parallel
-      // const toolResults = await Promise.all(
-      //   toolCalls.map(async (tc) => {
-      //     const args = JSON.parse(tc.function.arguments || "{}");
-      //     this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
-      //     const result = await this.executeTool(tc.function.name, args, shopId, userId);
-      //     return {
-      //       role: "tool" as const,
-      //       tool_call_id: tc.id,
-      //       content: JSON.stringify(result),
-      //     };
-      //   }),
-      // );
-      const toolResults = await Promise.all(
-        toolCalls.map(async (tc) => {
-          let args: any = {};
-          try {
-            const parsed = JSON.parse(tc.function.arguments || "{}");
-            args = parsed && typeof parsed === "object" ? parsed : {};
-          } catch {
-            this.logger.warn(`Failed to parse args for ${tc.function.name}: ${tc.function.arguments}`);
-            args = {};
-          }
-          this.logger.log(`Tool called: ${tc.function.name} args: ${JSON.stringify(args)}`);
-          const result = await this.executeTool(tc.function.name, args, shopId, userId);
-          return {
-            role: "tool" as const,
-            tool_call_id: tc.id,
-            content: JSON.stringify(result),
-          };
-        }),
-      );
-      apiMessages.push(...toolResults);
-      response = await this.azureService.call(apiMessages, this.toolDefinitions());
-    }
-
-    const finalMessage = response.message.content ?? "";
-    const parsed = this.parseChartFromText(finalMessage);
+    const parsed = this.parseChartFromText(result.text);
 
     const saved = await this.saveConversation(
       messages,
@@ -102,308 +66,236 @@ export class AiAssistantService {
   }
 
   // =====================================
-  // TOOL ROUTER
+  // CHAT — streaming variant
+  // Returns a StreamTextResult with .textStream
   // =====================================
-  private async executeTool(
-    name: string,
-    args: any,
+  chatStream(
+    messages: ChatMessageDto[],
     shopId: number,
     userId: number,
-  ): Promise<any> {
-    switch (name) {
-      // Sales
-      case "getTodaySales": return this.salesTool.getTodaySales(shopId);
-      case "getWeeklySales": return this.salesTool.getWeeklySales(shopId, args.days);
-      case "getTopSelling": return this.salesTool.getTopSelling(shopId, args.limit);
-      case "getRecentSales": return this.salesTool.getRecentSales(shopId, args.limit);
-      case "createSale": return this.salesTool.createSale(args, shopId, userId);
+  ) {
+    return streamText({
+      model: this.aiSdkService.getModel(),
+      system: SYSTEM_PROMPT,
+      messages: messages.map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      tools: this.toolDefinitions(shopId, userId),
+      stopWhen: stepCountIs(10),
+      temperature: 0.3,
+    });
+  }
 
-      // Expenses
-      case "getTodayExpense": return this.expenseTool.getTodayExpense(shopId);
-      case "getExpenseBreakdown": return this.expenseTool.getExpenseBreakdown(shopId, args.days);
-      case "getMonthlyExpense": return this.expenseTool.getMonthlyExpense(shopId);
-      case "createExpense": return this.expenseTool.createExpense(args, shopId);
-
-      // Inventory
-      case "getLowStock": return this.inventoryTool.getLowStock(shopId);
-      case "getProductCatalog": return this.inventoryTool.getProductCatalog(shopId);
-      case "getInventoryValue": return this.inventoryTool.getInventoryValue(shopId);
-      case "getCustomerList": return this.inventoryTool.getCustomerList(shopId);
-
-      // Khata
-      case "getTotalDue": return this.khataTool.getTotalDue(shopId);
-      case "getCustomerDues": return this.khataTool.getCustomerDues(shopId);
-
-      // Purchases
-      case "getTodayPurchase": return this.purchaseTool.getTodayPurchase(shopId);
-      case "getPurchaseSummary": return this.purchaseTool.getPurchaseSummary(shopId, args.days);
-      case "createPurchase": return this.purchaseTool.createPurchase(args, shopId, userId);
-
-      default:
-        this.logger.warn(`Unknown tool: ${name}`);
-        return { error: `Unknown tool: ${name}` };
-    }
+  // =====================================
+  // FINALIZE — parse chart + save after stream ends
+  // =====================================
+  async finalizeChat(
+    messages: ChatMessageDto[],
+    fullText: string,
+    shopId: number,
+    userId: number,
+    conversationId?: number,
+  ) {
+    const parsed = this.parseChartFromText(fullText);
+    const saved = await this.saveConversation(
+      messages,
+      parsed,
+      shopId,
+      userId,
+      conversationId,
+    );
+    return { ...parsed, conversationId: saved.id };
   }
 
   // =====================================
   // TOOL DEFINITIONS
   // =====================================
-  private toolDefinitions() {
-    return [
+  private toolDefinitions(shopId: number, userId: number) {
+    return {
       // ── Sales ──
-      {
-        type: "function",
-        function: {
-          name: "getTodaySales",
-          description: "Get today's total sales amount and transaction count. Use for: aaja ko bikri, today's sales, today's revenue.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getWeeklySales",
-          description: "Get daily sales breakdown for the last N days. Use for: weekly report, sales trend, last 7 days, hapta ko bikri.",
-          parameters: {
-            type: "object",
-            properties: {
-              days: { type: "number", description: "Number of past days. Default 7." },
-            },
-            required: [],
-          },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getTopSelling",
-          description: "Get top selling products by quantity sold. Use for: best sellers, popular products, top products, sabai bhandaa bढi bikne.",
-          parameters: {
-            type: "object",
-            properties: {
-              limit: { type: "number", description: "How many products to return. Default 10." },
-            },
-            required: [],
-          },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getRecentSales",
-          description: "Get list of most recent sales with items and customer info.",
-          parameters: {
-            type: "object",
-            properties: {
-              limit: { type: "number", description: "How many recent sales. Default 10." },
-            },
-            required: [],
-          },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "createSale",
-          description: "Record a new sale transaction. Call getProductCatalog first to get product IDs.",
-          parameters: {
-            type: "object",
-            properties: {
-              items: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    productId: { type: "number" },
-                    quantity: { type: "number" },
-                    unitPrice: { type: "number" },
-                  },
-                  required: ["productId", "quantity", "unitPrice"],
-                },
-              },
-              paymentMethod: { type: "string", enum: ["cash", "card", "online"], description: "Default: cash" },
-              paidAmount: { type: "number" },
-              customerId: { type: "number", description: "Optional customer ID" },
-              note: { type: "string" },
-            },
-            required: ["items", "paidAmount"],
-          },
-        },
-      },
+      getTodaySales: tool({
+        description:
+          "Get today's total sales amount and transaction count. Use for: aaja ko bikri, today's sales, today's revenue.",
+        inputSchema: z.object({}),
+        execute: () => this.salesTool.getTodaySales(shopId),
+      }),
+      getWeeklySales: tool({
+        description:
+          'Get daily sales breakdown for the last N days. Use for: weekly report, sales trend, last 7 days, hapta ko bikri.',
+        inputSchema: z.object({
+          days: z
+            .number()
+            .describe('Number of past days. Default 7.')
+            .optional(),
+        }),
+        execute: ({ days }: { days?: number }) =>
+          this.salesTool.getWeeklySales(shopId, days ?? 7),
+      }),
+      getTopSelling: tool({
+        description:
+          'Get top selling products by quantity sold. Use for: best sellers, popular products, top products, sabai bhandaa bढi bikne.',
+        inputSchema: z.object({
+          limit: z
+            .number()
+            .describe('How many products to return. Default 10.')
+            .optional(),
+        }),
+        execute: ({ limit }: { limit?: number }) =>
+          this.salesTool.getTopSelling(shopId, limit ?? 10),
+      }),
+      getRecentSales: tool({
+        description:
+          'Get list of most recent sales with items and customer info.',
+        inputSchema: z.object({
+          limit: z
+            .number()
+            .describe('How many recent sales. Default 10.')
+            .optional(),
+        }),
+        execute: ({ limit }: { limit?: number }) =>
+          this.salesTool.getRecentSales(shopId, limit ?? 10),
+      }),
+      createSale: tool({
+        description:
+          'Record a new sale transaction. Call getProductCatalog first to get product IDs.',
+        inputSchema: z.object({
+          items: z.array(
+            z.object({
+              productId: z.number(),
+              quantity: z.number(),
+              unitPrice: z.number(),
+            }),
+          ),
+          paymentMethod: z
+            .enum(['cash', 'card', 'online'])
+            .describe('Default: cash')
+            .optional(),
+          paidAmount: z.number(),
+          customerId: z.number().describe('Optional customer ID').optional(),
+          note: z.string().optional(),
+        }),
+        execute: (args) => this.salesTool.createSale(args, shopId, userId),
+      }),
 
       // ── Expenses ──
-      {
-        type: "function",
-        function: {
-          name: "getTodayExpense",
-          description: "Get today's total expenses. Use for: aaja ko kharcha, today's spending.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getExpenseBreakdown",
-          description: "Get expenses grouped by category. Use for: expense breakdown, kharcha ko vivaran, spending analysis.",
-          parameters: {
-            type: "object",
-            properties: {
-              days: { type: "number", description: "Past N days. Omit for all time." },
-            },
-            required: [],
-          },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getMonthlyExpense",
-          description: "Get this month's total expenses.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "createExpense",
-          description: "Record a new expense.",
-          parameters: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              amount: { type: "number" },
-              category: { type: "string" },
-              note: { type: "string" },
-            },
-            required: ["title", "amount"],
-          },
-        },
-      },
+      getTodayExpense: tool({
+        description:
+          "Get today's total expenses. Use for: aaja ko kharcha, today's spending.",
+        inputSchema: z.object({}),
+        execute: () => this.expenseTool.getTodayExpense(shopId),
+      }),
+      getExpenseBreakdown: tool({
+        description:
+          'Get expenses grouped by category. Use for: expense breakdown, kharcha ko vivaran, spending analysis.',
+        inputSchema: z.object({
+          days: z
+            .number()
+            .describe('Past N days. Omit for all time.')
+            .optional(),
+        }),
+        execute: ({ days }: { days?: number }) =>
+          this.expenseTool.getExpenseBreakdown(shopId, days),
+      }),
+      getMonthlyExpense: tool({
+        description: "Get this month's total expenses.",
+        inputSchema: z.object({}),
+        execute: () => this.expenseTool.getMonthlyExpense(shopId),
+      }),
+      createExpense: tool({
+        description: 'Record a new expense.',
+        inputSchema: z.object({
+          title: z.string(),
+          amount: z.number(),
+          category: z.string().optional(),
+          note: z.string().optional(),
+        }),
+        execute: (args) => this.expenseTool.createExpense(args, shopId),
+      }),
 
       // ── Inventory ──
-      {
-        type: "function",
-        function: {
-          name: "getLowStock",
-          description: "Get products that are low on stock or below their minimum limit. Use for: low stock alert, stock out, khatiyeko maal.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getProductCatalog",
-          description: "Get full product list with IDs, names, prices, and stock. REQUIRED before creating any sale or purchase.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getInventoryValue",
-          description: "Get total inventory value at cost and selling price. Use for: stock value, inventory worth.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getCustomerList",
-          description: "Get list of all customers with phone numbers. Use before creating a sale for a specific customer.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
+      getLowStock: tool({
+        description:
+          'Get products that are low on stock or below their minimum limit. Use for: low stock alert, stock out, khatiyeko maal.',
+        inputSchema: z.object({}),
+        execute: () => this.inventoryTool.getLowStock(shopId),
+      }),
+      getProductCatalog: tool({
+        description:
+          'Get full product list with IDs, names, prices, and stock. REQUIRED before creating any sale or purchase.',
+        inputSchema: z.object({}),
+        execute: () => this.inventoryTool.getProductCatalog(shopId),
+      }),
+      getInventoryValue: tool({
+        description:
+          'Get total inventory value at cost and selling price. Use for: stock value, inventory worth.',
+        inputSchema: z.object({}),
+        execute: () => this.inventoryTool.getInventoryValue(shopId),
+      }),
+      getCustomerList: tool({
+        description:
+          'Get list of all customers with phone numbers. Use before creating a sale for a specific customer.',
+        inputSchema: z.object({}),
+        execute: () => this.inventoryTool.getCustomerList(shopId),
+      }),
 
       // ── Khata ──
-      {
-        type: "function",
-        function: {
-          name: "getTotalDue",
-          description: "Get total outstanding customer dues. Use for: total due, total credit, khata, udhaaro.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getCustomerDues",
-          description: "Get dues broken down per customer. Use for: who owes money, customer wise due, pratyek customer ko udhaaro.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
+      getTotalDue: tool({
+        description:
+          'Get total outstanding customer dues. Use for: total due, total credit, khata, udhaaro.',
+        inputSchema: z.object({}),
+        execute: () => this.khataTool.getTotalDue(shopId),
+      }),
+      getCustomerDues: tool({
+        description:
+          'Get dues broken down per customer. Use for: who owes money, customer wise due, pratyek customer ko udhaaro.',
+        inputSchema: z.object({}),
+        execute: () => this.khataTool.getCustomerDues(shopId),
+      }),
 
       // ── Purchases ──
-      {
-        type: "function",
-        function: {
-          name: "getTodayPurchase",
-          description: "Get today's total purchases. Use for: aaja ko kharid, today's purchase.",
-          parameters: { type: "object", properties: {}, required: [] },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "getPurchaseSummary",
-          description: "Get purchase total for last N days.",
-          parameters: {
-            type: "object",
-            properties: {
-              days: { type: "number", description: "Past N days. Default 30." },
-            },
-            required: [],
-          },
-        },
-      },
-      {
-        type: "function",
-        function: {
-          name: "createPurchase",
-          description: "Record a new purchase/stock-in. Call getProductCatalog first.",
-          parameters: {
-            type: "object",
-            properties: {
-              items: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    productId: { type: "number" },
-                    quantity: { type: "number" },
-                    unitPrice: { type: "number" },
-                  },
-                  required: ["productId", "quantity", "unitPrice"],
-                },
-              },
-              paymentMethod: { type: "string", enum: ["cash", "card", "online"] },
-              paidAmount: { type: "number" },
-              note: { type: "string" },
-            },
-            required: ["items", "paidAmount"],
-          },
-        },
-      },
-    ];
+      getTodayPurchase: tool({
+        description:
+          "Get today's total purchases. Use for: aaja ko kharid, today's purchase.",
+        inputSchema: z.object({}),
+        execute: () => this.purchaseTool.getTodayPurchase(shopId),
+      }),
+      getPurchaseSummary: tool({
+        description: 'Get purchase total for last N days.',
+        inputSchema: z.object({
+          days: z.number().describe('Past N days. Default 30.').optional(),
+        }),
+        execute: ({ days }: { days?: number }) =>
+          this.purchaseTool.getPurchaseSummary(shopId, days ?? 30),
+      }),
+      createPurchase: tool({
+        description:
+          'Record a new purchase/stock-in. Call getProductCatalog first.',
+        inputSchema: z.object({
+          items: z.array(
+            z.object({
+              productId: z.number(),
+              quantity: z.number(),
+              unitPrice: z.number(),
+            }),
+          ),
+          paymentMethod: z.enum(['cash', 'card', 'online']).optional(),
+          paidAmount: z.number(),
+          note: z.string().optional(),
+        }),
+        execute: (args) =>
+          this.purchaseTool.createPurchase(args, shopId, userId),
+      }),
+    };
   }
 
   // =====================================
   // PARSE CHART FROM TEXT
-  // Only thing left to parse — no more [ACTION] regex
   // =====================================
-  // private parseChartFromText(text: string): { message: string; chart: any | null } {
-  //   const chartMatch = text.match(/```chart\s*([\s\S]*?)```/);
-  //   if (chartMatch) {
-  //     try {
-  //       const chart = JSON.parse(chartMatch[1].trim());
-  //       const message = text.replace(/```chart[\s\S]*?```/, "").trim();
-  //       return { message, chart };
-  //     } catch {
-  //       // malformed chart JSON — just return text
-  //     }
-  //   }
-  //   return { message: text, chart: null };
-  // }
-  private parseChartFromText(text: string): { message: string; chart: any | null } {
+  private parseChartFromText(text: string): {
+    message: string;
+    chart: any | null;
+  } {
     // Try fenced ```chart block first
     let match = text.match(/```chart\s*([\s\S]*?)```/);
     let raw = match?.[1];
@@ -419,7 +311,7 @@ export class AiAssistantService {
     if (raw && fullMatch) {
       try {
         const chart = JSON.parse(raw.trim());
-        const message = text.replace(fullMatch, "").trim();
+        const message = text.replace(fullMatch, '').trim();
         return { message, chart };
       } catch {
         this.logger.warn(`Malformed chart JSON: ${raw}`);
@@ -428,14 +320,15 @@ export class AiAssistantService {
 
     return { message: text, chart: null };
   }
+
   // =====================================
   // CONVERSATION CRUD
   // =====================================
   async getConversations(shopId: number, userId: number) {
     return this.conversationRepo.find({
       where: { shop: { id: shopId }, user: { id: userId } },
-      select: ["id", "title", "createdAt", "updatedAt"],
-      order: { updatedAt: "DESC" },
+      select: ['id', 'title', 'createdAt', 'updatedAt'],
+      order: { updatedAt: 'DESC' },
     });
   }
 
@@ -463,12 +356,16 @@ export class AiAssistantService {
     userId: number,
     conversationId?: number,
   ): Promise<AiConversation> {
-    const assistantMsg: any = { role: "assistant", content: result.message };
+    const assistantMsg: any = { role: 'assistant', content: result.message };
     if (result.chart) assistantMsg.chart = result.chart;
 
     if (conversationId) {
       const existing = await this.conversationRepo.findOne({
-        where: { id: conversationId, shop: { id: shopId }, user: { id: userId } },
+        where: {
+          id: conversationId,
+          shop: { id: shopId },
+          user: { id: userId },
+        },
       });
       if (existing) {
         existing.messages = [...messages, assistantMsg];
@@ -476,12 +373,14 @@ export class AiAssistantService {
       }
     }
 
-    const lastUser = messages.filter((m) => m.role === "user").pop();
-    const title = lastUser ? lastUser.content.substring(0, 80) : "New conversation";
+    const lastUser = messages.filter((m) => m.role === 'user').pop();
+    const title = lastUser
+      ? lastUser.content.substring(0, 80)
+      : 'New conversation';
 
     const conversation = this.conversationRepo.create({
-      shop: { id: shopId } as any,
-      user: { id: userId } as any,
+      shop: { id: shopId },
+      user: { id: userId },
       title,
       messages: [...messages, assistantMsg],
     });
