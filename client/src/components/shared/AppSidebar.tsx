@@ -24,9 +24,11 @@ import {
   Sparkles,
   Store,
   Tags,
+  UserCog,
   Users,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
+import { getRoleFromToken } from "@/utils/auth"
 const items = [
   {
     title: "Dashboard",
@@ -84,6 +86,12 @@ const items = [
     url: "/dashboard/settings",
   },
   {
+    title: "Staff",
+    icon: UserCog,
+    url: "/dashboard/staff",
+    ownerOnly: true,
+  },
+  {
     title: "Subscription",
     icon: Crown,
     url: "/dashboard/subscription",
@@ -93,6 +101,7 @@ const items = [
 export function AppSidebar() {
   const shop = JSON.parse(localStorage.getItem("shop") || "null")
   const location = useLocation()
+  const isOwner = getRoleFromToken() === "owner"
   const getInitials = (name?: string) => {
     if (!name) return "?"
     return name
@@ -172,7 +181,9 @@ export function AppSidebar() {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {items
+                .filter((item) => !item.ownerOnly || isOwner)
+                .map((item) => {
                 const isActive = location.pathname === item.url
 
                 return (

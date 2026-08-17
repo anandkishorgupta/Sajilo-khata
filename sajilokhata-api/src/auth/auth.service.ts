@@ -18,12 +18,12 @@ export class AuthService {
 
         private jwtService: JwtService,
     ) { }
-    // generate token
     generateToken(user: User) {
         return this.jwtService.sign({
             sub: user.id,
             shopId: user.shop?.id,
             email: user.email,
+            role: user.role,
         });
     }
 
@@ -51,6 +51,7 @@ export class AuthService {
             name: dto.name,
             password: hashedPassword,
             shop: savedShop,
+            role: 'owner',
         });
 
         const savedUser = await this.userRepo.save(user);
@@ -58,11 +59,11 @@ export class AuthService {
         // const accessToken = this.generateToken(savedUser);
 
         return {
-            // access_token: accessToken,
             user: {
                 id: savedUser.id,
                 email: savedUser.email,
                 name: savedUser.name,
+                role: savedUser.role,
             },
             shop: {
                 id: savedShop.id,
@@ -92,7 +93,6 @@ export class AuthService {
             throw new Error('Invalid credentials');
         }
 
-        // 3. return token
         const accessToken = this.generateToken(user);
         return {
             access_token: accessToken,
@@ -100,6 +100,7 @@ export class AuthService {
                 id: user.id,
                 email: user.email,
                 name: user.name,
+                role: user.role,
             },
             shop: {
                 id: user.shop.id,

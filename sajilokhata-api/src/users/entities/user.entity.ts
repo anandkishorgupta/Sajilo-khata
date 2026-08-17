@@ -3,8 +3,8 @@ import {
     CreateDateColumn,
     Entity,
     JoinColumn,
+    ManyToOne,
     OneToMany,
-    OneToOne,
     PrimaryGeneratedColumn
 } from 'typeorm';
 import { Sale } from '../../sales/entities';
@@ -15,10 +15,8 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    // Each user belongs to ONE shop
-    @OneToOne(() => Shop, (shop) => shop.owner, {
+    @ManyToOne(() => Shop, (shop) => shop.users, {
         onDelete: "CASCADE",
-        eager: true,
     })
     @JoinColumn({ name: "shop_id" })
     shop: Shop;
@@ -34,6 +32,9 @@ export class User {
 
     @Column()
     password: string;
+
+    @Column({ type: 'varchar', default: 'owner' })
+    role: 'owner' | 'staff';
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

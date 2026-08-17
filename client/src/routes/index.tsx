@@ -18,6 +18,7 @@ import CategoriesPage from "@/pages/CategoriesPage"
 import CustomersPage from "@/pages/CustomersPage"
 import InventoryPage from "@/pages/InventoryPage"
 import SettingsPage from "@/pages/SettingsPage"
+import StaffPage from "@/pages/StaffPage"
 import TrialExpiredPage from "@/pages/TrialExpiredPage"
 import ProtectedRoute from "./ProtectedRoute"
 import PublicRoute from "./PublicRoute"
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
       { path: "/dashboard/customers", element: <CustomersPage /> },
       { path: "/dashboard/analytics", element: <AnalyticsPage /> },
       { path: "/dashboard/settings", element: <SettingsPage /> },
+      { path: "/dashboard/staff", element: <StaffPage /> },
       { path: "/dashboard/categories", element: <CategoriesPage /> },
       { path: "/dashboard/khata", element: <KhataPage /> },
       { path: "/dashboard/expenses", element: <ExpensePage /> },

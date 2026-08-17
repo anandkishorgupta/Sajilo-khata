@@ -3,7 +3,6 @@ import {
     CreateDateColumn,
     Entity,
     OneToMany,
-    OneToOne,
     PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Customer } from '../../customers/entities';
@@ -30,8 +29,8 @@ export class Shop {
     @Column()
     phone: string;
 
-    @OneToOne(() => User, (user) => user.shop)
-    owner: User;
+    @OneToMany(() => User, (user) => user.shop)
+    users: User[];
 
     @OneToMany(() => Product, (product) => product.shop)
     products: Product[];

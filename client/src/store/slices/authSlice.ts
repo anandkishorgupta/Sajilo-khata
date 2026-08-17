@@ -1,10 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit"
 import type { PayloadAction } from "@reduxjs/toolkit"
+import { decodeJwtPayload } from "@/utils/auth"
 
 type User = {
     id: number
     name: string
     email: string
+    role: 'owner' | 'staff'
 }
 
 type AuthState = {
@@ -19,6 +21,11 @@ const initialState: AuthState = {
     isAuthenticated: false,
 }
 
+function getRoleFromToken(token: string): 'owner' | 'staff' {
+    const payload = decodeJwtPayload(token)
+    return payload?.role === 'staff' ? 'staff' : 'owner'
+}
+
 const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -27,7 +34,8 @@ const authSlice = createSlice({
             state,
             action: PayloadAction<{ user: User; token: string }>
         ) {
-            state.user = action.payload.user
+            const tokenRole = getRoleFromToken(action.payload.token)
+            state.user = { ...action.payload.user, role: tokenRole }
             state.token = action.payload.token
             state.isAuthenticated = true
         },
@@ -40,12 +48,12 @@ const authSlice = createSlice({
             localStorage.removeItem("user")
             localStorage.removeItem("shop")
         },
-        // Runs when app reloads (refresh page)
         hydrateAuth(
             state,
             action: PayloadAction<{ user: User; token: string }>
         ) {
-            state.user = action.payload.user
+            const tokenRole = getRoleFromToken(action.payload.token)
+            state.user = { ...action.payload.user, role: tokenRole }
             state.token = action.payload.token
             state.isAuthenticated = true
         },
