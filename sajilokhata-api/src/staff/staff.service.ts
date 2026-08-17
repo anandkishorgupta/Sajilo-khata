@@ -1,15 +1,20 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities';
 import { CreateStaffDto } from './dto/create-staff.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class StaffService {
+    private readonly logger = new Logger(StaffService.name);
+
     constructor(
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
+
+        private readonly auditLogService: AuditLogService,
     ) {}
 
     async createStaff(shopId: number, dto: CreateStaffDto) {
@@ -32,6 +37,16 @@ export class StaffService {
 
         const saved = await this.userRepo.save(staff);
         const { password, ...result } = saved;
+
+        this.auditLogService.log({
+            shopId,
+            action: 'STAFF_ADD',
+            entityType: 'Staff',
+            entityId: saved.id,
+            description: `Added staff member: ${dto.name} (${dto.email})`,
+            newValues: { name: dto.name, email: dto.email, phone: dto.phone },
+        }).catch((err) => this.logger.error('Audit log failed', err));
+
         return result;
     }
 
@@ -57,7 +72,19 @@ export class StaffService {
             where: { id: staffId, shop: { id: shopId }, role: 'staff' },
         });
         if (!member) throw new NotFoundException('Staff member not found');
+
+        const oldValues = { name: member.name, email: member.email };
         await this.userRepo.remove(member);
+
+        this.auditLogService.log({
+            shopId,
+            action: 'STAFF_REMOVE',
+            entityType: 'Staff',
+            entityId: staffId,
+            description: `Removed staff member: ${member.name} (${member.email})`,
+            oldValues,
+        }).catch((err) => this.logger.error('Audit log failed', err));
+
         return { message: 'Staff member removed' };
     }
 }

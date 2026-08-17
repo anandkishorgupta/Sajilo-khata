@@ -1,6 +1,7 @@
 import {
     BadRequestException,
     Injectable,
+    Logger,
     NotFoundException,
 } from "@nestjs/common";
 
@@ -16,9 +17,12 @@ import { StockMovement } from "../stock-movements/entities";
 import { User } from "../users/entities";
 import { CreateSaleDto, FindSalesDto } from "./dto";
 import { Sale, SaleItem } from "./entities";
+import { AuditLogService } from "../audit-log/audit-log.service";
 
 @Injectable()
 export class SalesService {
+    private readonly logger = new Logger(SalesService.name);
+
     constructor(
         @InjectRepository(Sale)
         private saleRepo: Repository<Sale>,
@@ -40,6 +44,8 @@ export class SalesService {
 
         @InjectRepository(KhataTransaction)
         private khataRepo: Repository<KhataTransaction>,
+
+        private readonly auditLogService: AuditLogService,
     ) { }
 
     // =========================
@@ -171,6 +177,25 @@ export class SalesService {
                 sale: { id: savedSale.id } as Sale,
             });
         }
+
+        this.auditLogService.log({
+            shopId,
+            userId,
+            action: 'CREATE',
+            entityType: 'Sale',
+            entityId: savedSale.id,
+            description: `Created sale ${invoiceNumber} for Rs. ${totalAmount} (${paymentStatus})${customer ? ` - Customer: ${customer.name}` : ''}`,
+            newValues: {
+                invoiceNumber,
+                totalAmount,
+                paidAmount,
+                dueAmount,
+                paymentMethod: dto.paymentMethod,
+                paymentStatus,
+                itemCount: saleItems.length,
+                customerName: customer?.name,
+            },
+        }).catch((err) => this.logger.error('Audit log failed', err));
 
         return savedSale;
     }
@@ -375,6 +400,17 @@ export class SalesService {
     async remove(id: number, shopId: number) {
         const sale = await this.findOne(id, shopId);
 
+        const oldValues = {
+            invoiceNumber: sale.invoiceNumber,
+            totalAmount: sale.totalAmount,
+            paidAmount: sale.paidAmount,
+            dueAmount: sale.dueAmount,
+            paymentMethod: sale.paymentMethod,
+            paymentStatus: sale.paymentStatus,
+            itemCount: sale.items?.length,
+            customerName: sale.customer?.name,
+        };
+
         for (const item of sale.items) {
             const product = await this.productRepo.findOne({
                 where: { id: item.product.id },
@@ -397,6 +433,17 @@ export class SalesService {
         // Remove related khata credit entries tied to this sale, if any
         await this.khataRepo.delete({ sale: { id: sale.id } });
 
-        return this.saleRepo.remove(sale);
+        await this.saleRepo.remove(sale);
+
+        this.auditLogService.log({
+            shopId,
+            action: 'DELETE',
+            entityType: 'Sale',
+            entityId: id,
+            description: `Deleted sale ${sale.invoiceNumber} (Rs. ${sale.totalAmount})`,
+            oldValues,
+        }).catch((err) => this.logger.error('Audit log failed', err));
+
+        return { message: 'Sale deleted' };
     }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -7,8 +7,12 @@ import { Transactional } from 'typeorm-transactional';
 import { Shop } from '../shops/entities';
 import { User } from '../users/entities';
 import { LoginDto, RegisterDto } from './dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         @InjectRepository(User)
         private userRepo: Repository<User>,
@@ -17,6 +21,8 @@ export class AuthService {
         private shopRepo: Repository<Shop>,
 
         private jwtService: JwtService,
+
+        private readonly auditLogService: AuditLogService,
     ) { }
     generateToken(user: User) {
         return this.jwtService.sign({
@@ -94,6 +100,18 @@ export class AuthService {
         }
 
         const accessToken = this.generateToken(user);
+
+        this.auditLogService.log({
+            shopId: user.shop.id,
+            userId: user.id,
+            userName: user.name,
+            userRole: user.role,
+            action: 'LOGIN',
+            entityType: 'Auth',
+            entityId: user.id,
+            description: `${user.name} (${user.role}) logged in`,
+        }).catch((err) => this.logger.error('Audit log failed', err));
+
         return {
             access_token: accessToken,
             user: {

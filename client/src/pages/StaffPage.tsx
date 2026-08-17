@@ -182,7 +182,7 @@ export default function StaffPage() {
             </p>
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Name</label>
+                <label className="text-sm font-medium">Name <span className="text-red-500">*</span></label>
                 <input
                   className="mt-1 w-full rounded border px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
                   value={form.name}
@@ -191,7 +191,7 @@ export default function StaffPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">Email <span className="text-red-500">*</span></label>
                 <input
                   type="email"
                   className="mt-1 w-full rounded border px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
@@ -201,7 +201,7 @@ export default function StaffPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Phone</label>
+                <label className="text-sm font-medium">Phone <span className="text-red-500">*</span></label>
                 <input
                   className="mt-1 w-full rounded border px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
                   value={form.phone}
@@ -210,7 +210,7 @@ export default function StaffPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Password</label>
+                <label className="text-sm font-medium">Password <span className="text-red-500">*</span></label>
                 <input
                   type="password"
                   className="mt-1 w-full rounded border px-3 py-2 outline-none focus:ring-2 focus:ring-primary"

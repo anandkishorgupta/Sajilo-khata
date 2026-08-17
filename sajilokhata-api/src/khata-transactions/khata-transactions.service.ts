@@ -1,5 +1,6 @@
 import {
     Injectable,
+    Logger,
     NotFoundException,
     BadRequestException,
 } from "@nestjs/common";
@@ -13,9 +14,12 @@ import { Customer } from "../customers/entities";
 import { Shop } from "../shops/entities";
 
 import { CreatePaymentDto } from "./dto";
+import { AuditLogService } from "../audit-log/audit-log.service";
 
 @Injectable()
 export class KhataTransactionsService {
+    private readonly logger = new Logger(KhataTransactionsService.name);
+
     constructor(
         @InjectRepository(KhataTransaction)
         private khataRepo: Repository<KhataTransaction>,
@@ -25,6 +29,8 @@ export class KhataTransactionsService {
 
         @InjectRepository(Shop)
         private shopRepo: Repository<Shop>,
+
+        private readonly auditLogService: AuditLogService,
     ) { }
 
     // =====================================
@@ -84,7 +90,24 @@ export class KhataTransactionsService {
             note: dto.note,
         });
 
-        return this.khataRepo.save(payment);
+        const saved = await this.khataRepo.save(payment);
+
+        this.auditLogService.log({
+            shopId,
+            action: 'CREATE',
+            entityType: 'Khata',
+            entityId: saved.id,
+            description: `Recorded payment of Rs. ${dto.amount} from ${customer.name}${dto.note ? ` - ${dto.note}` : ''}`,
+            newValues: {
+                customerName: customer.name,
+                customerId: customer.id,
+                amount: dto.amount,
+                note: dto.note,
+                balanceAfter: balance.balance - dto.amount,
+            },
+        }).catch((err) => this.logger.error('Audit log failed', err));
+
+        return saved;
     }
 
     // =====================================

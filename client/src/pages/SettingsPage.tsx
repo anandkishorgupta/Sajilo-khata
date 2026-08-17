@@ -5,6 +5,12 @@ import {
   updateProfile,
   updateShop,
 } from "@/api/settings"
+import {
+  getAuditLogs,
+  getAuditLogStats,
+  type AuditLogEntry,
+  type AuditLogStats,
+} from "@/api/audit-log"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,8 +26,17 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
   Calendar,
   Crown,
+  History,
   Loader2,
   Lock,
   Mail,
@@ -58,6 +73,15 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [savingPassword, setSavingPassword] = useState(false)
+
+  // Audit Log state
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([])
+  const [auditStats, setAuditStats] = useState<AuditLogStats | null>(null)
+  const [auditLoading, setAuditLoading] = useState(true)
+  const [auditPage, setAuditPage] = useState(1)
+  const [auditTotalPages, setAuditTotalPages] = useState(1)
+  const [auditEntityFilter, setAuditEntityFilter] = useState("")
+  const [auditActionFilter, setAuditActionFilter] = useState("")
 
   useEffect(() => {
     loadProfile()
@@ -145,6 +169,33 @@ export default function SettingsPage() {
     })
   }
 
+  async function loadAuditLogs(page = 1) {
+    setAuditLoading(true)
+    try {
+      const [logsRes, stats] = await Promise.all([
+        getAuditLogs({
+          page,
+          limit: 15,
+          entityType: auditEntityFilter || undefined,
+          action: auditActionFilter || undefined,
+        }),
+        getAuditLogStats(),
+      ])
+      setAuditLogs(logsRes.data)
+      setAuditTotalPages(logsRes.totalPages)
+      setAuditPage(logsRes.page)
+      setAuditStats(stats)
+    } catch {
+      toast.error("Failed to load activity log")
+    } finally {
+      setAuditLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAuditLogs(1)
+  }, [auditEntityFilter, auditActionFilter])
+
   function getPlanBadge(plan: string) {
     switch (plan) {
       case "pro":
@@ -195,7 +246,7 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             Profile
@@ -207,6 +258,10 @@ export default function SettingsPage() {
           <TabsTrigger value="security" className="gap-2">
             <Lock className="h-4 w-4" />
             Security
+          </TabsTrigger>
+          <TabsTrigger value="activity" className="gap-2">
+            <History className="h-4 w-4" />
+            Activity
           </TabsTrigger>
         </TabsList>
 
@@ -508,6 +563,228 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Activity Log Tab ── */}
+        <TabsContent value="activity" className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Card>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <History className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Actions</p>
+                  <p className="text-2xl font-bold">
+                    {auditStats?.total ?? 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
+                  <Calendar className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Today</p>
+                  <p className="text-2xl font-bold">
+                    {auditStats?.todayCount ?? 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                  <Calendar className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">This Week</p>
+                  <p className="text-2xl font-bold">
+                    {auditStats?.weekCount ?? 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-3">
+                <select
+                  value={auditEntityFilter}
+                  onChange={(e) => setAuditEntityFilter(e.target.value)}
+                  className="rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">All Entities</option>
+                  <option value="Sale">Sales</option>
+                  <option value="Purchase">Purchases</option>
+                  <option value="Product">Products</option>
+                  <option value="Expense">Expenses</option>
+                  <option value="Khata">Khata</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Auth">Auth</option>
+                  <option value="Shop">Shop</option>
+                </select>
+                <select
+                  value={auditActionFilter}
+                  onChange={(e) => setAuditActionFilter(e.target.value)}
+                  className="rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">All Actions</option>
+                  <option value="CREATE">Created</option>
+                  <option value="UPDATE">Updated</option>
+                  <option value="DELETE">Deleted</option>
+                  <option value="LOGIN">Login</option>
+                  <option value="STAFF_ADD">Staff Added</option>
+                  <option value="STAFF_REMOVE">Staff Removed</option>
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Log Table */}
+          <Card>
+            <CardContent className="p-0">
+              {auditLoading ? (
+                <div className="space-y-3 p-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="py-12 text-center">
+                  <History className="mx-auto h-12 w-12 text-muted-foreground/30" />
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    No activity recorded yet
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>When</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Details</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {auditLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(log.createdAt).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">
+                                {log.userName || "System"}
+                              </span>
+                              {log.userRole && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] px-1.5 py-0"
+                                >
+                                  {log.userRole}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                log.action === "DELETE"
+                                  ? "border-red-500/30 text-red-600"
+                                  : log.action === "CREATE" ||
+                                    log.action === "STAFF_ADD"
+                                    ? "border-green-500/30 text-green-600"
+                                    : log.action === "LOGIN"
+                                      ? "border-blue-500/30 text-blue-600"
+                                      : ""
+                              }
+                            >
+                              {log.action === "STAFF_ADD"
+                                ? "Staff Added"
+                                : log.action === "STAFF_REMOVE"
+                                  ? "Staff Removed"
+                                  : log.action.toLowerCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                            {log.description}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  {/* Pagination */}
+                  {auditTotalPages > 1 && (
+                    <div className="flex items-center justify-between border-t p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Page {auditPage} of {auditTotalPages}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={auditPage <= 1}
+                          onClick={() => loadAuditLogs(auditPage - 1)}
+                        >
+                          Previous
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={auditPage >= auditTotalPages}
+                          onClick={() => loadAuditLogs(auditPage + 1)}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Users */}
+          {auditStats?.byUser && auditStats.byUser.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Activity by User</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {auditStats.byUser.map((u, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {(u.userName || "?")[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{u.userName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {u.userRole}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{u.count} actions</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

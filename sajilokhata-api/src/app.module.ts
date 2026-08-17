@@ -1,7 +1,7 @@
 // app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { addTransactionalDataSource } from 'typeorm-transactional';
@@ -28,6 +28,8 @@ import { ShopsModule } from './shops/shops.module';
 import { StockMovementsModule } from './stock-movements/stock-movements.module';
 import { UsersModule } from './users/users.module';
 import { StaffModule } from './staff/staff.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
+import { AuditInterceptor } from './audit-log/audit-log.interceptor';
 import { PosSessionsModule } from './pos-sessions/pos-sessions.module';
 import { ScanGateway } from './scan/scan.gateway';
 import { ScanModule } from './scan/scan.module';
@@ -73,6 +75,7 @@ import { ScanModule } from './scan/scan.module';
     PosSessionsModule,
     ScanModule,
     StaffModule,
+    AuditLogModule,
   ],
   controllers: [AppController],
   providers: [AppService
@@ -80,6 +83,7 @@ import { ScanModule } from './scan/scan.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: SubscriptionGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     // ScanGateway,
   ],
 })
