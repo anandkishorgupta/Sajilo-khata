@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom"
 
 import AppLayout from "@/layout/AppLayout"
 import DashboardLayout from "@/layout/DashboardLayout"
+import AdminLayout from "@/layout/AdminLayout"
 import AiAssistantPage from "@/pages/AiAssistantPage"
 import LoginPage from "@/pages/auth/Loginpage"
 import RegisterPage from "@/pages/auth/RegisterPage"
@@ -21,9 +22,16 @@ import SettingsPage from "@/pages/SettingsPage"
 import StaffPage from "@/pages/StaffPage"
 import TrialExpiredPage from "@/pages/TrialExpiredPage"
 import ProtectedRoute from "./ProtectedRoute"
+import ProtectedAdminRoute from "./ProtectedAdminRoute"
 import PublicRoute from "./PublicRoute"
 import PaymentVerifyPage from "@/pages/PaymentVerifyPage";
 import SubscriptionPage from "@/pages/SubscriptionPage"
+import AdminLoginPage from "@/pages/admin/AdminLoginPage"
+import AdminDashboardPage from "@/pages/admin/AdminDashboardPage"
+import AdminShopsPage from "@/pages/admin/AdminShopsPage"
+import AdminUsersPage from "@/pages/admin/AdminUsersPage"
+import AdminPaymentsPage from "@/pages/admin/AdminPaymentsPage"
+
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -50,7 +58,28 @@ export const router = createBrowserRouter([
       { path: "/payment/verify", element: <PaymentVerifyPage /> },
     ],
   },
-{ path: "/scan", element: <ScannerPage /> },
+  { path: "/scan", element: <ScannerPage /> },
+
+  // Admin routes
+  {
+    path: "/admin/login",
+    element: <AdminLoginPage />,
+  },
+  {
+    element: (
+      <ProtectedAdminRoute>
+        <AdminLayout />
+      </ProtectedAdminRoute>
+    ),
+    children: [
+      { path: "/admin", element: <AdminDashboardPage /> },
+      { path: "/admin/shops", element: <AdminShopsPage /> },
+      { path: "/admin/users", element: <AdminUsersPage /> },
+      { path: "/admin/payments", element: <AdminPaymentsPage /> },
+    ],
+  },
+
+  // Dashboard routes
   {
     element: (
       <ProtectedRoute>
@@ -71,10 +100,7 @@ export const router = createBrowserRouter([
       { path: "/dashboard/khata", element: <KhataPage /> },
       { path: "/dashboard/expenses", element: <ExpensePage /> },
       { path: "/dashboard/ai-assistant", element: <AiAssistantPage /> },
-       { 
-      path: "/dashboard/subscription",
-      element: <SubscriptionPage />
-    },
+      { path: "/dashboard/subscription", element: <SubscriptionPage /> },
     ],
   },
 ])

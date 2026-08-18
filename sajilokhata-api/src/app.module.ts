@@ -33,6 +33,7 @@ import { AuditInterceptor } from './audit-log/audit-log.interceptor';
 import { PosSessionsModule } from './pos-sessions/pos-sessions.module';
 import { ScanGateway } from './scan/scan.gateway';
 import { ScanModule } from './scan/scan.module';
+import { AdminModule } from './admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -76,6 +77,7 @@ import { ScanModule } from './scan/scan.module';
     ScanModule,
     StaffModule,
     AuditLogModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService

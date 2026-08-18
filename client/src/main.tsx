@@ -16,6 +16,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { router } from "@/routes"
 
 import { hydrateAuth } from "./store/slices/authSlice"
+import { hydrateAdminAuth } from "./store/slices/adminSlice"
 import { getStoredToken, getStoredUser } from "./utils/auth"
 
 // Hydrate auth state from localStorage
@@ -24,6 +25,13 @@ const storedUser = getStoredUser()
 
 if (storedToken && storedUser) {
   store.dispatch(hydrateAuth({ token: storedToken, user: storedUser }))
+}
+
+// Hydrate admin auth state
+const storedAdminToken = localStorage.getItem("admin_token")
+const storedAdminUser = localStorage.getItem("admin_user")
+if (storedAdminToken && storedAdminUser) {
+  store.dispatch(hydrateAdminAuth({ token: storedAdminToken, admin: JSON.parse(storedAdminUser) }))
 }
 
 const queryClient = new QueryClient()
